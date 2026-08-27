@@ -1905,5 +1905,13 @@ updateHardwareMode();
 
 </script>
 
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/reduce-noise/sw.js')
+    .then(() => console.log('Service Worker registrato'))
+    .catch(err => console.error('Errore Service Worker:', err));
+}
+</script>
+    
 </body>
 </html>
