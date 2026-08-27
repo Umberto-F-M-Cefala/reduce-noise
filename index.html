@@ -1,0 +1,1909 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANC Sperimentale</title>
+<style>
+* { box-sizing: border-box; }
+body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background: #121921;
+    color: #ecf0f1;
+}
+.container {
+    width: 94%;
+    max-width: 500px;
+    padding: 22px;
+    border-radius: 18px;
+    background: #1e2c3a;
+    box-shadow: 0 12px 40px rgba(0,0,0,.5);
+}
+h1 {
+    margin: 0 0 4px;
+    text-align: center;
+    font-size: 22px;
+    color: white;
+}
+.subtitle {
+    text-align: center;
+    color: #8b9aa6;
+    font-size: 12px;
+    margin-bottom: 18px;
+}
+.panel {
+    background: #15222e;
+    padding: 15px;
+    border-radius: 12px;
+    margin: 11px 0;
+}
+.label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #3498db;
+}
+.value {
+    color: white;
+}
+.frequency {
+    text-align: center;
+    font-size: 32px;
+    font-weight: bold;
+    color: #2ecc71;
+    margin: 7px 0;
+}
+.phaseValue {
+    text-align: center;
+    font-size: 25px;
+    font-weight: bold;
+    color: #f1c40f;
+    margin: 5px 0;
+}
+.phaseInfo {
+    text-align: center;
+    color: #bdc3c7;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.buttons {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+button {
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 7px;
+    color: white;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: .12s;
+}
+button:active {
+    transform: scale(.95);
+}
+button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+.small {
+    flex: 1;
+    background: #2980b9;
+}
+.big {
+    flex: 1.2;
+    background: #34495e;
+}
+.auto {
+    width: 100%;
+    margin-top: 10px;
+    background: #d35400;
+}
+.play {
+    width: 48%;
+    background: #2ecc71;
+}
+.stop {
+    width: 48%;
+    background: #e74c3c;
+}
+.optimize {
+    width: 100%;
+    margin-top: 8px;
+    background: #8e44ad;
+}
+input[type=range] {
+    width: 100%;
+    accent-color: #3498db;
+}
+.meter {
+    height: 17px;
+    width: 100%;
+    background: #080d11;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+.meterBar {
+    height: 100%;
+    width: 0%;
+    background: #2ecc71;
+    transition: width .1s;
+}
+.result {
+    text-align: center;
+    padding: 11px;
+    border-radius: 8px;
+    margin-top: 10px;
+    background: #0f171e;
+    font-size: 14px;
+    font-weight: bold;
+}
+.good { color: #2ecc71; }
+.bad { color: #e74c3c; }
+.neutral { color: #f1c40f; }
+.status {
+    min-height: 20px;
+    text-align: center;
+    color: #bdc3c7;
+    font-size: 12px;
+    margin-top: 12px;
+}
+.infoGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+}
+.infoBox {
+    background: #0f171e;
+    padding: 9px;
+    border-radius: 7px;
+    text-align: center;
+    font-size: 11px;
+    color: #95a5a6;
+}
+.infoBox strong {
+    display: block;
+    color: white;
+    font-size: 14px;
+    margin-top: 3px;
+}
+.componentTitle {
+    color: #3498db;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+.toggleRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12px;
+    color: #bdc3c7;
+}
+.toggle {
+    position: relative;
+    width: 46px;
+    height: 24px;
+}
+.toggle input {
+    display: none;
+}
+.slider {
+    position: absolute;
+    inset: 0;
+    background: #34495e;
+    border-radius: 20px;
+    cursor: pointer;
+}
+.slider:before {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: .2s;
+}
+.toggle input:checked + .slider {
+    background: #2ecc71;
+}
+.toggle input:checked + .slider:before {
+    transform: translateX(22px);
+}
+.limitInfo {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 10px;
+    color: #95a5a6;
+}
+.manualHint {
+    color: #95a5a6;
+    font-size: 10px;
+    text-align: center;
+    margin-top: 8px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>ANC Sperimentale</h1>
+    <div class="subtitle">
+        Riduzione rumore • controllo manuale • ottimizzazione automatica
+    </div>
+    <!-- MODALITÀ -->
+    <div class="panel">
+        <div class="label">
+            <span>Modalità hardware</span>
+            <span id="modeLabel">SMARTPHONE</span>
+        </div>
+        <div class="toggleRow">
+            <span>
+                Limita frequenze e livello per smartphone.
+            </span>
+            <label class="toggle">
+                <input
+                    type="checkbox"
+                    id="smartphoneMode"
+                    checked
+                    onchange="updateHardwareMode()">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="limitInfo" id="limitInfo">
+            Modalità smartphone: 120–280 Hz conservativa
+        </div>
+    </div>
+    <!-- COMPONENTE 1 -->
+    <div class="panel">
+        <div class="componentTitle">
+            COMPONENTE 1 — PRINCIPALE
+        </div>
+        <div class="label">
+            <span>Frequenza</span>
+            <span class="value">
+                <span id="freq1Label">150</span> Hz
+            </span>
+        </div>
+        <div class="frequency">
+            <span id="freq1Large">150</span> Hz
+        </div>
+        <div class="buttons">
+            <button class="small" onclick="changeFrequency(0,-5)">−5</button>
+            <button class="small" onclick="changeFrequency(0,-1)">−1</button>
+            <button class="small" onclick="changeFrequency(0,1)">+1</button>
+            <button class="small" onclick="changeFrequency(0,5)">+5</button>
+        </div>
+        <div class="label" style="margin-top:15px;">
+            <span>Fase</span>
+            <span>
+                <span id="phase1Label">180.0</span>°
+            </span>
+        </div>
+        <div class="phaseValue">
+            <span id="phase1Large">180.0</span>°
+        </div>
+        <div class="buttons">
+            <button class="big" onclick="changePhase(0,-10)">−10°</button>
+            <button class="small" onclick="changePhase(0,-1)">−1°</button>
+            <button class="small" onclick="changePhase(0,1)">+1°</button>
+            <button class="big" onclick="changePhase(0,10)">+10°</button>
+        </div>
+        <div class="label" style="margin-top:15px;">
+            <span>Intensità manuale</span>
+            <span>
+                <span id="gain1Label">15</span>%
+            </span>
+        </div>
+        <input
+            type="range"
+            id="gain1Slider"
+            min="0"
+            max="100"
+            value="15"
+            step="1">
+    </div>
+    <!-- COMPONENTE 2 -->
+    <div class="panel">
+        <div class="componentTitle">
+            COMPONENTE 2 — SECONDARIA
+        </div>
+        <div class="label">
+            <span>Frequenza</span>
+            <span class="value">
+                <span id="freq2Label">220</span> Hz
+            </span>
+        </div>
+        <div class="frequency" style="font-size:26px;">
+            <span id="freq2Large">220</span> Hz
+        </div>
+        <div class="buttons">
+            <button class="small" onclick="changeFrequency(1,-5)">−5</button>
+            <button class="small" onclick="changeFrequency(1,-1)">−1</button>
+            <button class="small" onclick="changeFrequency(1,1)">+1</button>
+            <button class="small" onclick="changeFrequency(1,5)">+5</button>
+        </div>
+        <div class="label" style="margin-top:15px;">
+            <span>Fase</span>
+            <span>
+                <span id="phase2Label">180.0</span>°
+            </span>
+        </div>
+        <div class="phaseValue">
+            <span id="phase2Large">180.0</span>°
+        </div>
+        <div class="buttons">
+            <button class="big" onclick="changePhase(1,-10)">−10°</button>
+            <button class="small" onclick="changePhase(1,-1)">−1°</button>
+            <button class="small" onclick="changePhase(1,1)">+1°</button>
+            <button class="big" onclick="changePhase(1,10)">+10°</button>
+        </div>
+        <div class="label" style="margin-top:15px;">
+            <span>Intensità manuale</span>
+            <span>
+                <span id="gain2Label">8</span>%
+            </span>
+        </div>
+        <input
+            type="range"
+            id="gain2Slider"
+            min="0"
+            max="100"
+            value="8"
+            step="1">
+    </div>
+    <!-- OTTIMIZZAZIONE -->
+    <div class="panel">
+        <div class="label">
+            <span>Ottimizzazione</span>
+            <span>45%</span>
+        </div>
+        <button
+            class="optimize"
+            onclick="autoOptimize()">
+            ⚙️ ANALIZZA E OTTIMIZZA
+        </button>
+        <div class="manualHint">
+            ottimizzazione su richiesta, controlli manuali sempre disponibili.
+        </div>
+    </div>
+    <!-- MISURA -->
+    <div class="panel">
+        <div class="label">
+            <span>intensità rumore</span>
+            <span id="dbLabel">---</span>
+        </div>
+        <div class="meter">
+            <div id="meterBar" class="meterBar"></div>
+        </div>
+        <div id="result" class="result neutral">
+            In attesa di misura
+        </div>
+        <div class="infoGrid">
+            <div class="infoBox">
+                Rumore iniziale
+                <strong id="baselineDb">---</strong>
+            </div>
+            <div class="infoBox">
+                Riduzione
+                <strong id="reductionDb">---</strong>
+            </div>
+            <div class="infoBox">
+                Fondo banda
+                <strong id="backgroundDb">---</strong>
+            </div>
+            <div class="infoBox">
+                Correzione
+                <strong id="correctionValue">45%</strong>
+            </div>
+        </div>
+    </div>
+    <!-- CONTROLLI -->
+    <div style="display:flex; justify-content:space-between; margin-top:10px;">
+        <button class="play" onclick="startSystem()">
+            ▶ AVVIA
+        </button>
+        <button class="stop" onclick="stopSystem()">
+            ■ STOP
+        </button>
+    </div>
+    <button
+        class="auto"
+        style="background:#8e44ad"
+        onclick="measureEnvironment()">
+        🎙️ MISURA AMBIENTE
+    </button>
+    <div id="status" class="status">
+        Sistema pronto.
+    </div>
+</div>
+
+
+<script>
+
+/* =========================================================
+   CONFIGURAZIONE
+========================================================= */
+
+const SMARTPHONE_LIMITS = {
+    minFrequency: 120,
+    maxFrequency: 280,
+    maxGain: 22
+};
+
+const EXTENDED_LIMITS = {
+    minFrequency: 40,
+    maxFrequency: 350,
+    maxGain: 35
+};
+
+/*
+    Questa è intenzionalmente inferiore a 1.
+
+    Se l'ottimo matematico richiede, ad esempio,
+    30% di anti-rumore, il sistema automatico
+    ne applicherà circa:
+
+        30% × 0.45 = 13.5%
+*/
+const AUTO_CORRECTION_DEPTH = 0.45;
+
+const BANDWIDTH = 20;
+
+let audioCtx = null;
+
+let micStream = null;
+let micSource = null;
+
+let analyser = null;
+let rawAnalyser = null;
+
+let bandpass = null;
+
+let systemRunning = false;
+let optimizing = false;
+
+let baselineRms = null;
+
+let animationFrame = null;
+
+
+/* =========================================================
+   DUE COMPONENTI ANC
+========================================================= */
+
+const components = [
+
+    {
+        frequency: 150,
+        phase: 180,
+        gain: 15,
+
+        oscillator: null,
+        delayNode: null,
+        gainNode: null,
+
+        bestRms: Infinity
+    },
+
+    {
+        frequency: 220,
+        phase: 180,
+        gain: 8,
+
+        oscillator: null,
+        delayNode: null,
+        gainNode: null,
+
+        bestRms: Infinity
+    }
+
+];
+
+
+/* =========================================================
+   UTILITY
+========================================================= */
+
+const sleep = ms =>
+    new Promise(resolve => setTimeout(resolve, ms));
+
+
+function normalizePhase(phase) {
+
+    let p = phase % 360;
+
+    return p < 0 ? p + 360 : p;
+}
+
+
+function getLimits() {
+
+    const smartphone =
+        document.getElementById("smartphoneMode").checked;
+
+    return smartphone
+        ? SMARTPHONE_LIMITS
+        : EXTENDED_LIMITS;
+}
+
+
+function clamp(value, min, max) {
+
+    return Math.max(min, Math.min(max, value));
+}
+
+
+function rmsToDb(rms) {
+
+    if (!rms || rms <= 0)
+        return -100;
+
+    return 20 * Math.log10(rms);
+}
+
+
+/* =========================================================
+   MODALITÀ HARDWARE
+========================================================= */
+
+function updateHardwareMode() {
+
+    const smartphone =
+        document.getElementById("smartphoneMode").checked;
+
+    const modeLabel =
+        document.getElementById("modeLabel");
+
+    const limitInfo =
+        document.getElementById("limitInfo");
+
+    if (smartphone) {
+
+        modeLabel.innerText = "SMARTPHONE";
+
+        limitInfo.innerText =
+            "Modalità smartphone: 120–280 Hz • correzione massima 22%";
+
+    } else {
+
+        modeLabel.innerText = "ESTESA";
+
+        limitInfo.innerText =
+            "Modalità estesa: 40–350 Hz • livello sperimentale fino al 35%";
+
+    }
+
+    const limits = getLimits();
+
+    components.forEach((c, index) => {
+
+        c.frequency = clamp(
+            c.frequency,
+            limits.minFrequency,
+            limits.maxFrequency
+        );
+
+        c.gain = Math.min(c.gain, limits.maxGain);
+
+        updateComponentUI(index);
+
+    });
+
+    if (bandpass)
+        updateBandpass();
+}
+
+
+/* =========================================================
+   AUDIO
+========================================================= */
+
+async function initAudio() {
+
+    if (!audioCtx) {
+
+        audioCtx =
+            new (window.AudioContext ||
+                 window.webkitAudioContext)();
+
+    }
+
+    if (audioCtx.state === "suspended")
+        await audioCtx.resume();
+}
+
+
+async function initMicrophone() {
+
+    if (micStream)
+        return;
+
+    micStream =
+        await navigator.mediaDevices.getUserMedia({
+
+            audio: {
+
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false
+
+            },
+
+            video: false
+
+        });
+
+
+    micSource =
+        audioCtx.createMediaStreamSource(micStream);
+
+
+    bandpass =
+        audioCtx.createBiquadFilter();
+
+    bandpass.type = "bandpass";
+
+    bandpass.frequency.value =
+        components[0].frequency;
+
+    bandpass.Q.value =
+        components[0].frequency / BANDWIDTH;
+
+
+    analyser =
+        audioCtx.createAnalyser();
+
+    analyser.fftSize = 4096;
+
+    analyser.smoothingTimeConstant = 0.15;
+
+
+    rawAnalyser =
+        audioCtx.createAnalyser();
+
+    rawAnalyser.fftSize = 4096;
+
+    rawAnalyser.smoothingTimeConstant = 0.15;
+
+
+    micSource.connect(bandpass);
+
+    bandpass.connect(analyser);
+
+    micSource.connect(rawAnalyser);
+}
+
+
+function updateBandpass() {
+
+    if (!bandpass)
+        return;
+
+    /*
+        La banda di misura viene centrata
+        sulla componente principale.
+    */
+
+    bandpass.frequency.setTargetAtTime(
+        components[0].frequency,
+        audioCtx.currentTime,
+        0.01
+    );
+
+    bandpass.Q.value =
+        components[0].frequency / BANDWIDTH;
+}
+
+
+/* =========================================================
+   MISURAZIONE
+========================================================= */
+
+function measureTargetRMS() {
+
+    if (!analyser)
+        return 0;
+
+    const buffer =
+        new Float32Array(analyser.fftSize);
+
+    analyser.getFloatTimeDomainData(buffer);
+
+    let sum = 0;
+
+    for (let i = 0; i < buffer.length; i++)
+        sum += buffer[i] * buffer[i];
+
+    return Math.sqrt(sum / buffer.length);
+}
+
+
+function measureBackgroundRMS() {
+
+    if (!rawAnalyser)
+        return 0;
+
+    const buffer =
+        new Float32Array(rawAnalyser.fftSize);
+
+    rawAnalyser.getFloatTimeDomainData(buffer);
+
+    let sum = 0;
+
+    for (let i = 0; i < buffer.length; i++)
+        sum += buffer[i] * buffer[i];
+
+    return Math.sqrt(sum / buffer.length);
+}
+
+
+async function stableMeasurement(samples = 5) {
+
+    let values = [];
+
+    for (let i = 0; i < samples; i++) {
+
+        values.push(measureTargetRMS());
+
+        await sleep(35);
+    }
+
+    values.sort((a,b) => a-b);
+
+    /*
+        Mediana:
+        meno sensibile ai singoli campioni anomali.
+    */
+
+    return values[Math.floor(values.length / 2)];
+}
+
+
+/* =========================================================
+   FREQUENZA DOMINANTE
+========================================================= */
+
+function findDominantFrequency() {
+
+    if (!rawAnalyser)
+        return null;
+
+    const data =
+        new Float32Array(
+            rawAnalyser.frequencyBinCount
+        );
+
+    rawAnalyser.getFloatFrequencyData(data);
+
+    const limits = getLimits();
+
+    const binHz =
+        audioCtx.sampleRate /
+        rawAnalyser.fftSize;
+
+    const minIndex =
+        Math.max(
+            1,
+            Math.floor(limits.minFrequency / binHz)
+        );
+
+    const maxIndex =
+        Math.min(
+            data.length - 1,
+            Math.ceil(limits.maxFrequency / binHz)
+        );
+
+    let maxValue = -Infinity;
+    let maxIndexFound = -1;
+
+    for (
+        let i = minIndex;
+        i <= maxIndex;
+        i++
+    ) {
+
+        if (data[i] > maxValue) {
+
+            maxValue = data[i];
+            maxIndexFound = i;
+
+        }
+    }
+
+    if (maxIndexFound < 0)
+        return null;
+
+
+    /*
+        Interpolazione parabolica semplice
+        tra i tre bin vicini.
+
+        Migliora la stima rispetto al solo bin FFT.
+    */
+
+    let delta = 0;
+
+    if (
+        maxIndexFound > 0 &&
+        maxIndexFound < data.length - 1
+    ) {
+
+        const y1 = data[maxIndexFound - 1];
+        const y2 = data[maxIndexFound];
+        const y3 = data[maxIndexFound + 1];
+
+        const denominator =
+            y1 - 2*y2 + y3;
+
+        if (denominator !== 0) {
+
+            delta =
+                0.5 *
+                (y1 - y3) /
+                denominator;
+
+        }
+    }
+
+    const frequency =
+        (maxIndexFound + delta) * binHz;
+
+    return Math.round(frequency * 10) / 10;
+}
+
+
+/* =========================================================
+   OSCILLATORI
+========================================================= */
+
+function createComponentAudio(index) {
+
+    const c =
+        components[index];
+
+    if (c.oscillator) {
+
+        try {
+            c.oscillator.stop();
+        } catch(e) {}
+
+    }
+
+
+    c.oscillator =
+        audioCtx.createOscillator();
+
+    c.delayNode =
+        audioCtx.createDelay(1.0);
+
+    c.gainNode =
+        audioCtx.createGain();
+
+
+    c.oscillator.type = "sine";
+
+    c.oscillator.frequency.value =
+        c.frequency;
+
+
+    const delaySeconds =
+        (c.phase / 360) *
+        (1 / c.frequency);
+
+
+    c.delayNode.delayTime.value =
+        delaySeconds;
+
+
+    c.gainNode.gain.value = 0;
+
+
+    c.oscillator.connect(
+        c.delayNode
+    );
+
+    c.delayNode.connect(
+        c.gainNode
+    );
+
+    c.gainNode.connect(
+        audioCtx.destination
+    );
+
+
+    c.oscillator.start();
+
+    applyComponentGain(index);
+}
+
+
+function applyComponentPhase(index) {
+
+    const c =
+        components[index];
+
+    if (!c.delayNode)
+        return;
+
+    const delaySeconds =
+        (c.phase / 360) *
+        (1 / c.frequency);
+
+    c.delayNode.delayTime.setTargetAtTime(
+        delaySeconds,
+        audioCtx.currentTime,
+        0.005
+    );
+}
+
+
+function applyComponentGain(index) {
+
+    const c =
+        components[index];
+
+    if (!c.gainNode)
+        return;
+
+    const limits =
+        getLimits();
+
+    const gain =
+        clamp(
+            c.gain,
+            0,
+            limits.maxGain
+        ) / 100 * 0.35;
+
+
+    c.gainNode.gain.setTargetAtTime(
+        gain,
+        audioCtx.currentTime,
+        0.015
+    );
+}
+
+
+function updateComponentAudio(index) {
+
+    const c =
+        components[index];
+
+    if (!c.oscillator)
+        return;
+
+    c.oscillator.frequency.setTargetAtTime(
+        c.frequency,
+        audioCtx.currentTime,
+        0.01
+    );
+
+    applyComponentPhase(index);
+
+    applyComponentGain(index);
+}
+
+
+/* =========================================================
+   UI
+========================================================= */
+
+function updateComponentUI(index) {
+
+    const c =
+        components[index];
+
+    const n =
+        index + 1;
+
+
+    document.getElementById(
+        `freq${n}Label`
+    ).innerText =
+        c.frequency.toFixed(1);
+
+
+    document.getElementById(
+        `freq${n}Large`
+    ).innerText =
+        c.frequency.toFixed(1);
+
+
+    document.getElementById(
+        `phase${n}Label`
+    ).innerText =
+        c.phase.toFixed(1);
+
+
+    document.getElementById(
+        `phase${n}Large`
+    ).innerText =
+        c.phase.toFixed(1);
+
+
+    document.getElementById(
+        `gain${n}Label`
+    ).innerText =
+        c.gain;
+
+
+    document.getElementById(
+        `gain${n}Slider`
+    ).value =
+        c.gain;
+}
+
+
+function updateAllUI() {
+
+    updateComponentUI(0);
+    updateComponentUI(1);
+}
+
+
+/* =========================================================
+   CONTROLLI MANUALI
+========================================================= */
+
+function changeFrequency(index, amount) {
+
+    const c =
+        components[index];
+
+    const limits =
+        getLimits();
+
+    c.frequency =
+        clamp(
+            c.frequency + amount,
+            limits.minFrequency,
+            limits.maxFrequency
+        );
+
+    updateComponentUI(index);
+
+    updateComponentAudio(index);
+
+    if (index === 0)
+        updateBandpass();
+
+    if (systemRunning)
+        evaluateManualChange();
+}
+
+
+function changePhase(index, amount) {
+
+    const c =
+        components[index];
+
+    c.phase =
+        normalizePhase(
+            c.phase + amount
+        );
+
+    updateComponentUI(index);
+
+    updateComponentAudio(index);
+
+    if (systemRunning)
+        evaluateManualChange();
+}
+
+
+function updateGain(index) {
+
+    const c =
+        components[index];
+
+    const limits =
+        getLimits();
+
+    const slider =
+        document.getElementById(
+            `gain${index + 1}Slider`
+        );
+
+    c.gain =
+        clamp(
+            Number(slider.value),
+            0,
+            limits.maxGain
+        );
+
+    slider.value =
+        c.gain;
+
+    updateComponentUI(index);
+
+    updateComponentAudio(index);
+
+    if (systemRunning)
+        evaluateManualChange();
+}
+
+
+document
+    .getElementById("gain1Slider")
+    .addEventListener(
+        "input",
+        () => updateGain(0)
+    );
+
+
+document
+    .getElementById("gain2Slider")
+    .addEventListener(
+        "input",
+        () => updateGain(1)
+    );
+
+
+/* =========================================================
+   AVVIO / STOP
+========================================================= */
+
+async function startSystem() {
+
+    try {
+
+        await initAudio();
+
+        await initMicrophone();
+
+
+        if (baselineRms === null) {
+
+            baselineRms =
+                await stableMeasurement(7);
+
+            document.getElementById(
+                "baselineDb"
+            ).innerText =
+                rmsToDb(baselineRms)
+                .toFixed(1) + " dB";
+
+        }
+
+
+        components.forEach(
+            (_, index) =>
+                createComponentAudio(index)
+        );
+
+
+        systemRunning = true;
+
+
+        document.getElementById(
+            "status"
+        ).innerText =
+            "ANC attivo — correzione congelata.";
+
+
+        monitor();
+
+    } catch(err) {
+
+        console.error(err);
+
+        document.getElementById(
+            "status"
+        ).innerText =
+            "Errore durante l'avvio o accesso al microfono.";
+
+    }
+}
+
+
+function stopSystem() {
+
+    systemRunning = false;
+
+
+    components.forEach(c => {
+
+        if (c.oscillator) {
+
+            try {
+                c.oscillator.stop();
+            } catch(e) {}
+
+            c.oscillator.disconnect();
+            c.oscillator = null;
+        }
+
+        if (c.delayNode) {
+
+            c.delayNode.disconnect();
+            c.delayNode = null;
+        }
+
+        if (c.gainNode) {
+
+            c.gainNode.disconnect();
+            c.gainNode = null;
+        }
+
+    });
+
+
+    if (animationFrame) {
+
+        cancelAnimationFrame(
+            animationFrame
+        );
+
+        animationFrame = null;
+    }
+
+
+    document.getElementById(
+        "status"
+    ).innerText =
+        "Sistema fermato.";
+}
+
+
+/* =========================================================
+   MONITOR
+   NON MODIFICA AUTOMATICAMENTE NULLA
+========================================================= */
+
+function monitor() {
+
+    if (!systemRunning)
+        return;
+
+
+    const rms =
+        measureTargetRMS();
+
+    const db =
+        rmsToDb(rms);
+
+
+    document.getElementById(
+        "dbLabel"
+    ).innerText =
+        db.toFixed(1) + " dB";
+
+
+    const meter =
+        clamp(
+            (db + 70) * 1.5,
+            0,
+            100
+        );
+
+
+    document.getElementById(
+        "meterBar"
+    ).style.width =
+        meter + "%";
+
+
+    if (
+        baselineRms &&
+        rms > 0
+    ) {
+
+        const reduction =
+            20 *
+            Math.log10(
+                baselineRms / rms
+            );
+
+
+        document.getElementById(
+            "reductionDb"
+        ).innerText =
+            (reduction >= 0 ? "+" : "") +
+            reduction.toFixed(2) +
+            " dB";
+    }
+
+
+    /*
+        Importante:
+        nessun parametro viene modificato qui.
+    */
+
+    animationFrame =
+        requestAnimationFrame(
+            monitor
+        );
+}
+
+
+/* =========================================================
+   MISURA AMBIENTE
+========================================================= */
+
+async function measureEnvironment() {
+
+    try {
+
+        await initAudio();
+        await initMicrophone();
+
+        /*
+            Prima misura con anti-rumore spento.
+        */
+
+        stopSystem();
+
+        document.getElementById(
+            "status"
+        ).innerText =
+            "Misurazione ambiente...";
+
+
+        await sleep(500);
+
+
+        baselineRms =
+            await stableMeasurement(10);
+
+
+        const baselineDb =
+            rmsToDb(baselineRms);
+
+
+        document.getElementById(
+            "baselineDb"
+        ).innerText =
+            baselineDb.toFixed(1) + " dB";
+
+
+        const background =
+            measureBackgroundRMS();
+
+
+        document.getElementById(
+            "backgroundDb"
+        ).innerText =
+            rmsToDb(background)
+            .toFixed(1) + " dB";
+
+
+        const dominant =
+            findDominantFrequency();
+
+
+        if (dominant) {
+
+            const limits =
+                getLimits();
+
+            components[0].frequency =
+                clamp(
+                    dominant,
+                    limits.minFrequency,
+                    limits.maxFrequency
+                );
+
+            updateComponentUI(0);
+            updateBandpass();
+        }
+
+
+        document.getElementById(
+            "status"
+        ).innerText =
+            dominant
+                ? `Analisi completata: ${dominant.toFixed(1)} Hz dominante.`
+                : "Analisi completata.";
+
+
+    } catch(err) {
+
+        console.error(err);
+
+        document.getElementById(
+            "status"
+        ).innerText =
+            "Impossibile effettuare la misura.";
+
+    }
+}
+
+
+/* =========================================================
+   VALUTAZIONE MANUALE
+========================================================= */
+
+async function evaluateManualChange() {
+
+    if (!systemRunning)
+        return;
+
+    await sleep(120);
+
+    const rms =
+        await stableMeasurement(3);
+
+    const result =
+        document.getElementById("result");
+
+
+    if (
+        baselineRms &&
+        rms < baselineRms * 0.98
+    ) {
+
+        result.className =
+            "result good";
+
+        result.innerText =
+            "🟢 Riduzione misurabile";
+
+    } else if (
+        baselineRms &&
+        rms > baselineRms * 1.02
+    ) {
+
+        result.className =
+            "result bad";
+
+        result.innerText =
+            "🔴 Peggioramento — riduci la correzione";
+
+    } else {
+
+        result.className =
+            "result neutral";
+
+        result.innerText =
+            "🟡 Variazione minima";
+
+    }
+}
+
+
+/* =========================================================
+   OTTIMIZZAZIONE CONSERVATIVA
+========================================================= */
+
+async function autoOptimize() {
+
+    if (optimizing)
+        return;
+
+
+    try {
+
+        optimizing = true;
+
+
+        await initAudio();
+        await initMicrophone();
+
+
+        stopSystem();
+
+
+        document.getElementById(
+            "status"
+        ).innerText =
+            "Ottimizzazione: analisi del rumore...";
+
+
+        /*
+            BASELINE
+        */
+
+        baselineRms =
+            await stableMeasurement(10);
+
+
+        document.getElementById(
+            "baselineDb"
+        ).innerText =
+            rmsToDb(baselineRms)
+            .toFixed(1) + " dB";
+
+
+        /*
+            TROVA COMPONENTE PRINCIPALE
+        */
+
+        const dominant =
+            findDominantFrequency();
+
+
+        if (dominant) {
+
+            const limits =
+                getLimits();
+
+
+            components[0].frequency =
+                clamp(
+                    dominant,
+                    limits.minFrequency,
+                    limits.maxFrequency
+                );
+
+        }
+
+
+        /*
+            SECONDA COMPONENTE:
+            cerchiamo una frequenza vicina alla seconda
+            armonica, ma non la consideriamo automaticamente
+            valida per la cancellazione.
+        */
+
+        components[1].frequency =
+            clamp(
+                components[0].frequency * 2,
+                getLimits().minFrequency,
+                getLimits().maxFrequency
+            );
+
+
+        /*
+            AZZERIAMO LE CORREZIONI
+            DURANTE LA RICERCA
+        */
+
+        components.forEach(c => {
+            c.gain = 0;
+        });
+
+
+        updateAllUI();
+
+
+        /*
+            CREIAMO GLI OSCILLATORI
+        */
+
+        components.forEach(
+            (_, index) =>
+                createComponentAudio(index)
+        );
+
+
+        await sleep(200);
+
+
+        /*
+            OTTIMIZZA COMPONENTE 1
+        */
+
+        await optimizeComponent(0);
+
+
+        /*
+            La seconda componente viene testata
+            solo se esiste una ragionevole energia
+            nella sua banda.
+        */
+
+        await optimizeComponent(1);
+
+
+        /*
+            RIAPPLICA IL LIMITE CONSERVATIVO
+        */
+
+        components.forEach(c => {
+
+            const limits =
+                getLimits();
+
+            c.gain =
+                clamp(
+                    c.gain,
+                    0,
+                    limits.maxGain
+                );
+
+        });
+
+
+        updateAllUI();
+
+
+        const finalRms =
+            await stableMeasurement(10);
+
+
+        const reduction =
+            20 *
+            Math.log10(
+                baselineRms / finalRms
+            );
+
+
+        document.getElementById(
+            "reductionDb"
+        ).innerText =
+            (reduction >= 0 ? "+" : "") +
+            reduction.toFixed(2) +
+            " dB";
+
+
+        document.getElementById(
+            "result"
+        ).className =
+            reduction > 0
+                ? "result good"
+                : "result bad";
+
+
+        document.getElementById(
+            "result"
+        ).innerText =
+            reduction > 0
+                ? `🟢 Correzione applicata: ${reduction.toFixed(1)} dB`
+                : "🔴 Nessuna riduzione affidabile";
+
+
+        document.getElementById(
+            "status"
+        ).innerText =
+            "Ottimizzazione completata — parametri congelati.";
+
+
+        systemRunning = true;
+
+        monitor();
+
+
+    } catch(err) {
+
+        console.error(err);
+
+        document.getElementById(
+            "status"
+        ).innerText =
+            "Errore durante l'ottimizzazione.";
+
+    }
+
+
+    optimizing = false;
+}
+
+
+/* =========================================================
+   OTTIMIZZAZIONE DI UNA COMPONENTE
+========================================================= */
+
+async function optimizeComponent(index) {
+
+    const c =
+        components[index];
+
+    const limits =
+        getLimits();
+
+
+    /*
+        Prima testiamo se questa componente
+        ha senso.
+
+        Se è troppo bassa per lo smartphone,
+        viene semplicemente ignorata.
+    */
+
+    if (
+        c.frequency <
+        limits.minFrequency ||
+        c.frequency >
+        limits.maxFrequency
+    ) {
+
+        c.gain = 0;
+
+        return;
+    }
+
+
+    /*
+        Partiamo da una fase grossolana.
+    */
+
+    let bestPhase = 180;
+    let bestRms = Infinity;
+
+
+    /*
+        Scansione molto più piccola
+        rispetto a 0–360° a 1°.
+    */
+
+    for (
+        let phase = 0;
+        phase < 360;
+        phase += 30
+    ) {
+
+        c.phase =
+            phase;
+
+        c.gain =
+            Math.min(
+                20,
+                limits.maxGain
+            );
+
+
+        updateComponentAudio(index);
+
+        await sleep(80);
+
+
+        const rms =
+            await stableMeasurement(3);
+
+
+        if (
+            rms < bestRms
+        ) {
+
+            bestRms = rms;
+            bestPhase = phase;
+
+        }
+
+    }
+
+
+    /*
+        RICERCA FINE
+    */
+
+    let fineBestPhase =
+        bestPhase;
+
+    let fineBestRms =
+        bestRms;
+
+
+    for (
+        let phase = bestPhase - 20;
+        phase <= bestPhase + 20;
+        phase += 5
+    ) {
+
+        c.phase =
+            normalizePhase(phase);
+
+        updateComponentAudio(index);
+
+        await sleep(70);
+
+
+        const rms =
+            await stableMeasurement(2);
+
+
+        if (
+            rms < fineBestRms
+        ) {
+
+            fineBestRms = rms;
+
+            fineBestPhase =
+                normalizePhase(phase);
+
+        }
+
+    }
+
+
+    c.phase =
+        fineBestPhase;
+
+
+    /*
+        ORA CERCHIAMO L'AMPIEZZA.
+
+        NON cerchiamo il massimo.
+        Cerchiamo una riduzione utile
+        con il minimo livello possibile.
+    */
+
+    let bestGain = 0;
+
+    let referenceRms =
+        await stableMeasurement(4);
+
+
+    for (
+        let gain = 5;
+        gain <= limits.maxGain;
+        gain += 3
+    ) {
+
+        c.gain =
+            gain;
+
+        updateComponentAudio(index);
+
+        await sleep(80);
+
+
+        const rms =
+            await stableMeasurement(3);
+
+
+        if (
+            rms < referenceRms * 0.995
+        ) {
+
+            bestGain =
+                gain;
+
+        }
+
+    }
+
+
+    /*
+        CORREZIONE CONSERVATIVA.
+
+        Se l'ottimo richiede 20%,
+        ne applichiamo il 45%:
+
+        20 × 0.45 = 9%
+    */
+
+    c.gain =
+        bestGain *
+        AUTO_CORRECTION_DEPTH;
+
+
+    /*
+        Mai sotto zero,
+        mai oltre il limite hardware.
+    */
+
+    c.gain =
+        clamp(
+            c.gain,
+            0,
+            limits.maxGain
+        );
+
+
+    updateComponentAudio(index);
+
+    updateComponentUI(index);
+
+
+    await sleep(150);
+}
+
+
+/* =========================================================
+   INIZIALIZZAZIONE
+========================================================= */
+
+updateAllUI();
+
+updateHardwareMode();
+
+</script>
+
+</body>
+</html>
