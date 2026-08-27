@@ -2,7 +2,7 @@
   "name": "Riduci-rumore",
   "short_name": "Riduci-rumore",
   "description": "Protptipo per ridurre il rumore con onda contraria",
-  "start_url": "/voice-assistant/",
+  "start_url": "/reduce-noise/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#007bff",
