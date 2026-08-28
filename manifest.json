@@ -4,7 +4,7 @@
   "description": "Protptipo per ridurre il rumore con onda contraria",
   "start_url": "/reduce-noise/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#000000",
   "theme_color": "#007bff",
   "orientation": "portrait-primary",
   "icons": [
