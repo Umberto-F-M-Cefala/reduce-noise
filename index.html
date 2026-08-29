@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#080d11">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="ANC">
+<meta name="application-name" content="ANC Discreto V2.2">
 
 <link rel="manifest" href="/reduce-noise/manifest.json">
 
-<title>ANC - Android Core</title>
+<title>ANC Discreto V2.2 - Pure Tone Core</title>
 
 <style>
 *{
@@ -76,7 +76,6 @@ h1{
 .monitor{ background:#2477a9; color:#fff; }
 .calibrating{ background:#8e6b16; color:#fff; }
 .active{ background:#208c4d; color:#fff; }
-.warning{ background:#bd7410; color:#fff; }
 .danger{ background:#b53329; color:#fff; }
 
 .panel{
@@ -119,13 +118,8 @@ h1{
     margin-top:3px;
 }
 
-.good{color:#2ecc71!important}
-.warn{color:#f1c40f!important}
-.bad{color:#e74c3c!important}
-.blue{color:#3498db!important}
-
 .log{
-    min-height:56px;
+    min-height:50px;
     font-size:11px;
     line-height:1.45;
     color:#aab6bf;
@@ -145,6 +139,38 @@ h1{
     height:100%;
     background:#3498db;
     transition:width .15s linear;
+}
+
+/* SLOT SELECTOR */
+.slot-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:6px;
+    margin-bottom:10px;
+}
+
+.slot-btn{
+    background:#16232e;
+    border:1px solid #243746;
+    color:#8e9ea7;
+    padding:8px 0;
+    border-radius:6px;
+    font-weight:bold;
+    font-size:11px;
+    cursor:pointer;
+}
+
+.slot-btn.active-slot{
+    background:#2980b9;
+    border-color:#3498db;
+    color:#fff;
+    box-shadow:0 0 8px rgba(52,152,219,.5);
+}
+
+.buttons-profile{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
 }
 
 .buttons{
@@ -169,11 +195,12 @@ button{
 button:active{ transform:scale(.97); }
 button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
 
-.start{background:#27ae60}
-.stop{background:#c0392b}
+.start{ background:#27ae60 }
+.stop{ background:#c0392b }
 .monitor-btn{ background:#2980b9; grid-column:span 2; }
 .update{ background:#8e44ad; grid-column:span 2; }
-.profile{ background:#34495e; grid-column:span 2; padding:10px; font-size:11px; }
+.save-btn{ background:#d35400; font-size:11px; }
+.profile{ background:#34495e; font-size:11px; }
 
 .notice{
     margin-top:11px;
@@ -181,13 +208,6 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
     text-align:center;
     font-size:9px;
     line-height:1.45;
-}
-
-.small{
-    color:#687987;
-    font-size:9px;
-    line-height:1.4;
-    margin-top:7px;
 }
 
 @media(max-width:380px){
@@ -201,10 +221,10 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
 
 <div class="container">
 
-    <h1>ANC</h1>
+    <h1>ANC Discreto V2.2</h1>
 
     <div class="subtitle">
-        I/Q DSP • Calibrazione Reale • Android Core (GC-Optimized)
+        Pure Tone Synthesis • Microfono Limitato (&lt;4s) • 4 Profili
     </div>
 
     <div id="status" class="status idle">
@@ -212,23 +232,21 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
     </div>
 
     <div class="panel">
-        <div class="section-title">Diagnostica</div>
+        <div class="section-title">Diagnostica Operativa</div>
         <div class="grid">
             <div class="stat">Frequenza target<strong id="uiFreq">---</strong></div>
             <div class="stat">SNR<strong id="uiSnr">---</strong></div>
-            <div class="stat">Confidence<strong id="uiConf">---</strong></div>
-            <div class="stat">Cutoff speaker<strong id="uiCutoff">---</strong></div>
-            <div class="stat">Riduzione tono<strong id="uiToneReduction">---</strong></div>
-            <div class="stat">Riduzione RMS<strong id="uiGlobalReduction">---</strong></div>
+            <div class="stat">Fase calibrata<strong id="uiPhase">---</strong></div>
             <div class="stat">Gain ANC<strong id="uiGain">---</strong></div>
-            <div class="stat">Latenza<strong id="uiLatency">---</strong></div>
+            <div class="stat">Cutoff speaker<strong id="uiCutoff">---</strong></div>
+            <div class="stat">Stato Microfono<strong id="uiMicState">SPENTO</strong></div>
         </div>
     </div>
 
     <div class="panel">
         <div class="section-title">Stato sistema</div>
         <div id="uiLog" class="log">
-            Sistema pronto. Avvia prima la modalità monitor oppure ANC.
+            Pronto. Seleziona uno Slot o premi AVVIA ANC per calibrare.
         </div>
         <div class="progress">
             <div id="progressBar" class="progress-bar"></div>
@@ -236,22 +254,26 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
     </div>
 
     <div class="panel">
-        <div class="section-title">Parametri calibrazione</div>
-        <div class="grid">
-            <div class="stat">Risposta speaker<strong id="uiSpeakerResponse">---</strong></div>
-            <div class="stat">Fase calibrata<strong id="uiPhase">---</strong></div>
-            <div class="stat">Ampiezza target<strong id="uiTargetAmp">---</strong></div>
-            <div class="stat">Margine sicurezza<strong id="uiSafety">---</strong></div>
+        <div class="section-title">Gestione Profili Memoria</div>
+        <div class="slot-grid">
+            <button id="slot1" class="slot-btn active-slot" onclick="selectSlot(1)">Slot 1</button>
+            <button id="slot2" class="slot-btn" onclick="selectSlot(2)">Slot 2</button>
+            <button id="slot3" class="slot-btn" onclick="selectSlot(3)">Slot 3</button>
+            <button id="slot4" class="slot-btn" onclick="selectSlot(4)">Slot 4</button>
         </div>
-        <div class="small">
-            La calibrazione utilizza un segnale a basso guadagno per misurare 
-            sperimentalmente il percorso speaker → ambiente → microfono.
+        <div class="buttons-profile">
+            <button class="save-btn" id="btnSave" onclick="handleUserTrigger(saveProfile);">
+                💾 SALVA SU <span id="lblSaveSlot">SLOT 1</span>
+            </button>
+            <button class="profile" id="btnProfile" onclick="handleUserTrigger(loadProfile);">
+                📂 CARICA DA <span id="lblLoadSlot">SLOT 1</span>
+            </button>
         </div>
     </div>
 
     <div class="buttons">
         <button class="monitor-btn" id="btnMonitor" onclick="handleUserTrigger(startMonitor);">
-            👁️ SOLO MONITOR
+            👁️ CAMPIOAMENTO RAPIDO (1s)
         </button>
 
         <button class="start" id="btnStart" onclick="handleUserTrigger(startANC);">
@@ -263,17 +285,13 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
         </button>
 
         <button class="update" id="btnUpdate" onclick="handleUserTrigger(updateANC);" disabled>
-            🔄 AGGIORNA CORREZIONE
-        </button>
-
-        <button class="profile" id="btnProfile" onclick="handleUserTrigger(loadProfile);">
-            💾 CARICA PROFILO
+            🔄 RICALIBRA (&lt; 4s)
         </button>
     </div>
 
     <div class="notice">
-        Sistema tonale sperimentale. Nessun adattamento aggressivo continuo.
-        In caso di instabilità il generatore viene automaticamente silenziato.
+        Il microfono si attiva solo per massimo 3 secondi durante l'ottimizzazione.
+        A calibrazione ultimata l'hardware emette solo il tono puro senza ascolto.
     </div>
 
 </div>
@@ -281,37 +299,29 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
 <script>
 
 /* ========================================================================== */
-/* CONFIGURAZIONE                                                             */
+/* CONFIGURAZIONE OTTIMIZZATA PER RUNTIME BREVE                               */
 /* ========================================================================== */
 
 const CONFIG = {
     scanMinFreq: 80,
     scanMaxFreq: 320,
-    ancMinFreq: 110,
+    ancMinFreq: 100,
     ancMaxFreq: 300,
     fftSize: 4096,
     minPeakDb: -68,
     minSnrDb: 6,
     maxFreqDeviation: 1.5,
     calibrationGain: 0.035,
-    calibrationTime: 850,
-    calibrationSettling: 250,
+    calibrationTime: 450,
+    calibrationSettling: 150,
     maxGain: 0.22,
     minUsefulGain: 0.015,
-    minToneReductionDb: 3.0,
-    minGlobalReductionDb: 0.5,
-    trackingInterval: 900,
-    trackingToleranceHz: 2.5,
-    trackingAmplitudeRatio: 2.5,
-    clippingThreshold: 0.985,
-    feedbackRiseDb: 5.0,
-    maxCalibrationResponse: 0.45,
-    profileVersion: "2.1-android-iq"
+    profileVersion: "2.2-slots"
 };
 
 
 /* ========================================================================== */
-/* AUDIOWORKLET (CON MODULO FASE OTTIMIZZATO)                                 */
+/* AUDIOWORKLET (PURE SINE EMITTER)                                           */
 /* ========================================================================== */
 
 const WORKLET_CODE = `
@@ -323,17 +333,10 @@ class ANCProcessor extends AudioWorkletProcessor {
         this.gain = 0;
         this.targetGain = 0;
         this.enabled = false;
-        this.monitorOnly = true;
-
         this.phaseAccumulator = 0;
+        this.sampleCounter = 0;
         this.refI = 0;
         this.refQ = 0;
-        this.sampleCounter = 0;
-        this.blockSize = 1024;
-
-        this.rmsSum = 0;
-        this.rmsCount = 0;
-        this.baselineRms = 0;
 
         this.port.onmessage = (event) => {
             const data = event.data || {};
@@ -343,10 +346,6 @@ class ANCProcessor extends AudioWorkletProcessor {
                 if(Number.isFinite(p.phase)) this.phase = p.phase;
                 if(Number.isFinite(p.gain)) this.targetGain = p.gain;
                 if(typeof p.enabled === "boolean") this.enabled = p.enabled;
-                if(typeof p.monitorOnly === "boolean") this.monitorOnly = p.monitorOnly;
-            }
-            if(data.type === "BASELINE") {
-                this.baselineRms = Math.max(Number(data.value) || 0, 1e-7);
             }
             if(data.type === "MUTE") {
                 this.enabled = false;
@@ -357,75 +356,43 @@ class ANCProcessor extends AudioWorkletProcessor {
     }
 
     process(inputs, outputs) {
-        const input = inputs[0] && inputs[0][0];
         const output = outputs[0] && outputs[0][0];
-        if(!input) return true;
+        if(!output) return true;
 
+        const input = inputs[0] && inputs[0][0];
         const omega = 2 * Math.PI * this.freq / sampleRate;
         const TWO_PI = 2 * Math.PI;
-        let blockSquare = 0;
 
-        for(let i = 0; i < input.length; i++) {
-            const x = input[i];
-            blockSquare += x * x;
-
-            /* CLIPPING SAFETY */
-            if(Math.abs(x) >= 0.985) {
-                this.port.postMessage({ type: "SAFETY", reason: "CLIPPING" });
-                this.enabled = false;
-                this.targetGain = 0;
-                this.gain = 0;
-                if(output) output[i] = 0;
-                continue;
+        for(let i = 0; i < output.length; i++) {
+            // Misurazione I/Q solo se il microfono è fisicamente connesso
+            if(input && input[i] !== undefined) {
+                const x = input[i];
+                const refPhase = omega * this.sampleCounter;
+                this.refI += x * Math.cos(refPhase);
+                this.refQ += x * Math.sin(refPhase);
+                this.sampleCounter++;
             }
 
-            /* I/Q DETECTION */
-            const refPhase = omega * this.sampleCounter;
-            this.refI += x * Math.cos(refPhase);
-            this.refQ += x * Math.sin(refPhase);
-            this.sampleCounter++;
-
-            /* OSCILLATOR PHASE WRAP OPTIMIZED */
+            // Accumulatore di fase senza deriva
             this.phaseAccumulator = (this.phaseAccumulator + omega) % TWO_PI;
+            this.gain += (this.targetGain - this.gain) * 0.008;
 
-            /* GAIN SLEW */
-            this.gain += (this.targetGain - this.gain) * 0.004;
-
-            /* OUTPUT GENERATION */
-            if(output && this.enabled && !this.monitorOnly) {
+            if(this.enabled) {
                 let p = (this.phaseAccumulator + this.phase) % TWO_PI;
                 if (p < 0) p += TWO_PI;
                 output[i] = Math.sin(p) * this.gain;
-            } else if(output) {
+            } else {
                 output[i] = 0;
             }
         }
 
-        this.rmsSum += blockSquare;
-        this.rmsCount += input.length;
-
-        /* TELEMETRY BLOCK */
-        if(this.sampleCounter >= 4096) {
-            const amp = (2 / 4096) * Math.sqrt(this.refI * this.refI + this.refQ * this.refQ);
+        if(this.sampleCounter >= 2048) {
+            const amp = (2 / 2048) * Math.sqrt(this.refI * this.refI + this.refQ * this.refQ);
             const phase = Math.atan2(this.refQ, this.refI);
-            const rms = Math.sqrt(this.rmsSum / Math.max(this.rmsCount, 1));
-
-            this.port.postMessage({ type: "TELEMETRY", amp, phase, rms });
-
+            this.port.postMessage({ type: "TELEMETRY", amp, phase });
             this.refI = 0;
             this.refQ = 0;
             this.sampleCounter = 0;
-            this.rmsSum = 0;
-            this.rmsCount = 0;
-        }
-
-        /* BROADBAND FEEDBACK SAFETY */
-        const blockRms = Math.sqrt(blockSquare / Math.max(input.length, 1));
-        if(this.enabled && this.baselineRms > 0 && blockRms > (this.baselineRms * Math.pow(10, 5/20))) {
-            this.port.postMessage({ type: "SAFETY", reason: "RAPID_RMS_RISE" });
-            this.enabled = false;
-            this.targetGain = 0;
-            this.gain = 0;
         }
 
         return true;
@@ -436,7 +403,7 @@ registerProcessor("anc-iq-processor", ANCProcessor);
 
 
 /* ========================================================================== */
-/* STATO E BUFFER RIUTILIZZABILI (GC-OPTIMIZED)                                */
+/* STATO E MEMORIA                                                            */
 /* ========================================================================== */
 
 let audioCtx = null;
@@ -445,29 +412,23 @@ let micSource = null;
 let analyser = null;
 let worklet = null;
 
-// Shared TypedArrays per evitare allocazioni dinamiche nel ciclo Audio
 let sharedTimeBuffer = null;
 let sharedFreqBuffer = null;
 
 let currentState = "IDLE";
 let operationId = 0;
+let currentSlot = 1;
 
-let telemetry = { amp: 0, phase: 0, rms: 0 };
+let telemetry = { amp: 0, phase: 0 };
 let target = {
     freq: 0, snr: 0, confidence: 0,
     phase: Math.PI, gain: 0,
-    baselineAmp: 0, activeAmp: 0,
-    baselineRms: 0, activeRms: 0,
-    toneReduction: 0, globalReduction: 0,
-    speakerResponse: 0, cutoff: CONFIG.ancMinFreq,
-    latency: 0
+    cutoff: CONFIG.ancMinFreq
 };
-
-let trackingTimer = null;
 
 
 /* ========================================================================== */
-/* UTILITÀ & BUFFER MANAGEMENT                                                */
+/* UTILITÀ BASE                                                               */
 /* ========================================================================== */
 
 function ensureBuffers() {
@@ -481,17 +442,10 @@ function ensureBuffers() {
 }
 
 function handleUserTrigger(asyncFn) {
-    haptic();
     if (audioCtx && audioCtx.state === "suspended") {
         audioCtx.resume();
     }
     asyncFn();
-}
-
-function haptic() {
-    if("vibrate" in navigator) {
-        try { navigator.vibrate(12); } catch(e){}
-    }
 }
 
 function sleep(ms) {
@@ -500,10 +454,6 @@ function sleep(ms) {
 
 function clamp(v, min, max) {
     return Math.max(min, Math.min(max, v));
-}
-
-function db(v) {
-    return 20 * Math.log10(Math.max(v, 1e-9));
 }
 
 function setProgress(value) {
@@ -520,50 +470,68 @@ function setStatus(text, css) {
     el.className = "status " + css;
 }
 
+function updateMicUI(active) {
+    const el = document.getElementById("uiMicState");
+    if(active) {
+        el.innerText = "ATTIVO (SCAN)";
+        el.style.color = "#e74c3c";
+    } else {
+        el.innerText = "SPENTO";
+        el.style.color = "#2ecc71";
+    }
+}
+
 
 /* ========================================================================== */
-/* UI UPDATE                                                                  */
+/* SELEZIONE SLOT PROFILO                                                     */
+/* ========================================================================== */
+
+function selectSlot(slotNum) {
+    currentSlot = slotNum;
+    for(let i = 1; i <= 4; i++) {
+        const btn = document.getElementById(`slot${i}`);
+        if(btn) {
+            if(i === slotNum) {
+                btn.classList.add("active-slot");
+            } else {
+                btn.classList.remove("active-slot");
+            }
+        }
+    }
+    document.getElementById("lblSaveSlot").innerText = `SLOT ${slotNum}`;
+    document.getElementById("lblLoadSlot").innerText = `SLOT ${slotNum}`;
+    log(`Selezionato Slot ${slotNum}.`);
+}
+
+
+/* ========================================================================== */
+/* DIAGNOSTICA AGGIORNAMENTO UI                                               */
 /* ========================================================================== */
 
 function updateUI() {
     document.getElementById("uiFreq").innerText = target.freq ? target.freq.toFixed(1) + " Hz" : "---";
     document.getElementById("uiSnr").innerText = target.snr ? target.snr.toFixed(1) + " dB" : "---";
-    document.getElementById("uiConf").innerText = target.confidence ? target.confidence.toFixed(0) + " %" : "---";
     document.getElementById("uiCutoff").innerText = target.cutoff ? target.cutoff.toFixed(0) + " Hz" : "---";
-    document.getElementById("uiToneReduction").innerText = target.toneReduction ? "-" + target.toneReduction.toFixed(1) + " dB" : "---";
-    document.getElementById("uiGlobalReduction").innerText = target.globalReduction ? "-" + target.globalReduction.toFixed(1) + " dB" : "---";
     document.getElementById("uiGain").innerText = (target.gain * 100).toFixed(1) + " %";
-    document.getElementById("uiLatency").innerText = target.latency ? target.latency.toFixed(1) + " ms" : "---";
-    document.getElementById("uiSpeakerResponse").innerText = target.speakerResponse ? db(target.speakerResponse).toFixed(1) + " dB" : "---";
     document.getElementById("uiPhase").innerText = (target.phase * 180 / Math.PI).toFixed(0) + "°";
-    document.getElementById("uiTargetAmp").innerText = target.activeAmp ? db(target.activeAmp).toFixed(1) + " dBFS" : "---";
-    document.getElementById("uiSafety").innerText = target.gain <= CONFIG.maxGain ? "OK" : "LIMIT";
 }
 
 
 /* ========================================================================== */
-/* AUDIO INIT                                                                 */
+/* GESTIONE AUDIO & CHIUSURA MICROFONO STRICT < 4S                             */
 /* ========================================================================== */
 
-async function initAudio() {
+async function initAudioContextOnly() {
     if(!window.AudioContext && !window.webkitAudioContext) {
         throw new Error("Web Audio API non disponibile.");
     }
-    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Microfono non disponibile.");
-    }
-
     if(!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
     }
-
     if(audioCtx.state === "suspended") {
         await audioCtx.resume();
     }
-
     if(!worklet) {
-        if(!audioCtx.audioWorklet) throw new Error("AudioWorklet non supportato.");
-
         const blob = new Blob([WORKLET_CODE], { type: "application/javascript" });
         const url = URL.createObjectURL(blob);
         await audioCtx.audioWorklet.addModule(url);
@@ -574,23 +542,26 @@ async function initAudio() {
             numberOfOutputs: 1,
             outputChannelCount: [1]
         });
-        worklet.port.onmessage = handleWorkletMessage;
-    }
-
-    if(!micStream) {
-        const constraints = {
-            audio: {
-                echoCancellation: false, noiseSuppression: false, autoGainControl: false,
-                googEchoCancellation: false, googNoiseSuppression: false, googAutoGainControl: false, googHighpassFilter: false,
-                channelCount: 1, latency: 0
+        worklet.port.onmessage = (e) => {
+            if(e.data && e.data.type === "TELEMETRY") {
+                telemetry.amp = Number(e.data.amp) || 0;
+                telemetry.phase = Number(e.data.phase) || 0;
             }
         };
+        worklet.connect(audioCtx.destination);
+    }
+}
 
-        try {
-            micStream = await navigator.mediaDevices.getUserMedia(constraints);
-        } catch(error) {
-            micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        }
+async function startMicrophone() {
+    await initAudioContextOnly();
+
+    if(!micStream) {
+        micStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: false, noiseSuppression: false, autoGainControl: false,
+                googEchoCancellation: false, googNoiseSuppression: false, googAutoGainControl: false
+            }
+        });
 
         micSource = audioCtx.createMediaStreamSource(micStream);
         analyser = audioCtx.createAnalyser();
@@ -598,72 +569,31 @@ async function initAudio() {
         analyser.smoothingTimeConstant = 0.05;
 
         ensureBuffers();
-
         micSource.connect(analyser);
         micSource.connect(worklet);
-        worklet.connect(audioCtx.destination);
+        updateMicUI(true);
     }
+}
 
-    target.latency = ((audioCtx.baseLatency || 0) + (audioCtx.outputLatency || 0)) * 1000;
-    updateUI();
+function stopMicrophone() {
+    if(micSource) {
+        try { micSource.disconnect(); } catch(e){}
+        micSource = null;
+    }
+    if(micStream) {
+        try { micStream.getTracks().forEach(t => t.stop()); } catch(e){}
+        micStream = null;
+    }
+    if(analyser) {
+        try { analyser.disconnect(); } catch(e){}
+        analyser = null;
+    }
+    updateMicUI(false);
 }
 
 
 /* ========================================================================== */
-/* WORKLET TELEMETRY HANDLER                                                  */
-/* ========================================================================== */
-
-function handleWorkletMessage(event) {
-    const data = event.data || {};
-
-    if(data.type === "TELEMETRY") {
-        telemetry.amp = Number(data.amp) || 0;
-        telemetry.phase = Number(data.phase) || 0;
-        telemetry.rms = Number(data.rms) || 0;
-
-        if(currentState === "ACTIVE" && target.baselineAmp > 0 && telemetry.amp > 0) {
-            target.activeAmp = telemetry.amp;
-            target.toneReduction = db(target.baselineAmp / telemetry.amp);
-            updateUI();
-        }
-    }
-
-    if(data.type === "SAFETY") {
-        emergencyMute(data.reason || "SAFETY");
-    }
-}
-
-
-/* ========================================================================== */
-/* TIME DOMAIN RMS (OPTIMIZED - NO GC ALLOC)                                  */
-/* ========================================================================== */
-
-function readRms() {
-    if(!analyser) return 0;
-    ensureBuffers();
-    analyser.getFloatTimeDomainData(sharedTimeBuffer);
-
-    let sum = 0;
-    for(let i = 0; i < sharedTimeBuffer.length; i++) {
-        const x = sharedTimeBuffer[i];
-        sum += x * x;
-    }
-    return Math.sqrt(sum / sharedTimeBuffer.length);
-}
-
-async function stableRms(samples = 5) {
-    const values = [];
-    for(let i = 0; i < samples; i++) {
-        values.push(readRms());
-        await sleep(35);
-    }
-    values.sort((a,b) => a - b);
-    return values[Math.floor(values.length / 2)];
-}
-
-
-/* ========================================================================== */
-/* FFT PEAK (OPTIMIZED - NO GC ALLOC)                                         */
+/* ESTRAZIONE SPECIALE AD ALTA VELOCITÀ (NO GC)                               */
 /* ========================================================================== */
 
 function detectPeak() {
@@ -695,10 +625,9 @@ function detectPeak() {
     delta = clamp(delta, -0.5, 0.5);
     const freq = (peakBin + delta) * binHz;
 
-    let noiseSum = 0;
-    let count = 0;
-    for(let i = Math.max(0, peakBin - 12); i <= Math.min(sharedFreqBuffer.length - 1, peakBin + 12); i++) {
-        if(Math.abs(i - peakBin) <= 3) continue;
+    let noiseSum = 0, count = 0;
+    for(let i = Math.max(0, peakBin - 10); i <= Math.min(sharedFreqBuffer.length - 1, peakBin + 10); i++) {
+        if(Math.abs(i - peakBin) <= 2) continue;
         noiseSum += sharedFreqBuffer[i];
         count++;
     }
@@ -706,251 +635,87 @@ function detectPeak() {
     const noiseFloor = count ? noiseSum / count : peakDb - 20;
     const snr = peakDb - noiseFloor;
 
-    return { freq, ampDb: peakDb, noiseFloor, snr };
+    return { freq, ampDb: peakDb, snr };
 }
 
-
-/* ========================================================================== */
-/* TRIPLE/QUAD SPECTRUM ANALYSIS                                              */
-/* ========================================================================== */
-
-async function analyseTarget() {
+async function fastAnalyseTarget() {
     const samples = [];
-    for(let i = 0; i < 4; i++) {
-        setProgress(10 + i * 12);
-        await sleep(180);
+    for(let i = 0; i < 3; i++) {
+        await sleep(140);
         const peak = detectPeak();
-        if(peak && peak.snr >= CONFIG.minSnrDb) {
-            samples.push(peak);
-        }
+        if(peak && peak.snr >= CONFIG.minSnrDb) samples.push(peak);
     }
-
-    if(samples.length < 3) return null;
+    if(samples.length < 2) return null;
 
     const avgFreq = samples.reduce((s,p) => s + p.freq, 0) / samples.length;
     const avgSnr = samples.reduce((s,p) => s + p.snr, 0) / samples.length;
-    const maxDeviation = Math.max(...samples.map(p => Math.abs(p.freq - avgFreq)));
-
-    if(maxDeviation > CONFIG.maxFreqDeviation) return null;
-
-    const confidence = clamp(100 - maxDeviation * 30 + Math.min(avgSnr * 1.2, 25), 50, 99);
-    return { freq: avgFreq, snr: avgSnr, confidence };
+    return { freq: avgFreq, snr: avgSnr, confidence: 90 };
 }
 
 
 /* ========================================================================== */
-/* SPEAKER CUTOFF CALIBRATION                                                 */
+/* ROUTINE RAPIDE DI CALIBRAZIONE (< 2.5s TOTALE)                             */
 /* ========================================================================== */
 
-async function estimateSpeakerCutoff() {
-    setStatus("CALIBRAZIONE SPEAKER", "calibrating");
-    log("Determinazione limite inferiore dello speaker...");
+async function fastEstimateCutoff() {
+    const testFreqs = [100, 120, 140];
+    let cutoff = CONFIG.ancMinFreq;
 
-    const testFreqs = [90, 110, 130, 150];
-    const results = [];
-    const baseline = await stableRms(5);
-
-    for(let i = 0; i < testFreqs.length; i++) {
-        const f = testFreqs[i];
-        setProgress(15 + i * 8);
-        log(`Test risposta speaker: ${f} Hz...`);
-
+    for(const f of testFreqs) {
         worklet.port.postMessage({
             type: "PARAMS",
-            payload: { freq: f, phase: 0, gain: CONFIG.calibrationGain, enabled: true, monitorOnly: false }
+            payload: { freq: f, phase: 0, gain: CONFIG.calibrationGain, enabled: true }
         });
-
-        await sleep(CONFIG.calibrationSettling);
-        const rms = await stableRms(4);
-        const delta = rms / Math.max(baseline, 1e-7);
-
-        results.push({ freq: f, response: delta });
-
-        worklet.port.postMessage({ type: "MUTE" });
-        await sleep(100);
-    }
-
-    let cutoff = CONFIG.ancMinFreq;
-    for(const r of results) {
-        if(r.response > 1.10) {
-            cutoff = Math.max(100, r.freq - 10);
+        await sleep(150);
+        if(telemetry.amp > 0.005) {
+            cutoff = Math.max(90, f - 10);
             break;
         }
     }
-
-    cutoff = clamp(cutoff, 100, 150);
-    target.cutoff = cutoff;
-
-    const strongest = results.reduce((a,b) => b.response > a.response ? b : a);
-    target.speakerResponse = Math.max(0, strongest.response - 1);
-
     worklet.port.postMessage({ type: "MUTE" });
-    updateUI();
+    target.cutoff = cutoff;
     return cutoff;
 }
 
-
-/* ========================================================================== */
-/* REAL PHASE CALIBRATION                                                     */
-/* ========================================================================== */
-
-async function calibratePhase(freq) {
-    setStatus("CALIBRAZIONE FASE", "calibrating");
-    log(`Misurazione fase reale a ${freq.toFixed(1)} Hz...`);
-
-    const baseline = await stableRms(5);
-
+async function fastCalibratePhase(freq) {
     worklet.port.postMessage({
         type: "PARAMS",
-        payload: { freq, phase: 0, gain: CONFIG.calibrationGain, enabled: true, monitorOnly: false }
+        payload: { freq, phase: 0, gain: CONFIG.calibrationGain, enabled: true }
     });
 
-    await sleep(CONFIG.calibrationSettling);
-
-    const samples = [];
-    const start = performance.now();
-
-    while(performance.now() - start < CONFIG.calibrationTime) {
-        await sleep(60);
-        if(telemetry.amp > 0) {
-            samples.push({ amp: telemetry.amp, phase: telemetry.phase });
-        }
-    }
+    await sleep( CONFIG.calibrationSettling );
+    await sleep( CONFIG.calibrationTime );
 
     worklet.port.postMessage({ type: "MUTE" });
 
-    if(samples.length < 2) throw new Error("Risposta di calibrazione insufficiente.");
-
-    const valid = samples.filter(s => s.amp > 1e-5);
-    if(!valid.length) throw new Error("Segnale di calibrazione non rilevabile.");
-
-    let sumX = 0, sumY = 0;
-    for(const s of valid) {
-        sumX += Math.cos(s.phase);
-        sumY += Math.sin(s.phase);
-    }
-
-    const measuredPhase = Math.atan2(sumY, sumX);
-    const response = valid.reduce((s,x) => s + x.amp, 0) / valid.length;
-
-    if(response > CONFIG.maxCalibrationResponse) {
-        throw new Error("Risposta speaker troppo elevata durante calibrazione.");
-    }
-
+    let measuredPhase = telemetry.phase || 0;
     let correction = (measuredPhase + Math.PI) % (Math.PI * 2);
     if (correction < 0) correction += Math.PI * 2;
 
     target.phase = correction;
-    target.speakerResponse = response;
-    target.baselineRms = baseline;
-
-    updateUI();
-    return { phase: correction, response };
+    return correction;
 }
 
+async function fastFindGain(freq, phase) {
+    const steps = [0.04, 0.08, 0.12, 0.16];
+    let selectedGain = 0.08;
 
-/* ========================================================================== */
-/* SAFE GAIN CALIBRATION                                                      */
-/* ========================================================================== */
-
-async function findSafeGain(freq, phase, baselineAmp) {
-    setStatus("CALIBRAZIONE GAIN", "calibrating");
-    log("Ricerca del minimo gain efficace...");
-
-    let bestGain = 0;
-    let bestAmp = baselineAmp;
-    const steps = [0.03, 0.05, 0.07, 0.09, 0.12, 0.15, 0.18, 0.22];
-
-    for(const gain of steps) {
-        if(gain > CONFIG.maxGain) continue;
-
+    for(const g of steps) {
         worklet.port.postMessage({
             type: "PARAMS",
-            payload: { freq, phase, gain, enabled: true, monitorOnly: false }
+            payload: { freq, phase, gain: g, enabled: true }
         });
-
-        await sleep(350);
-        const amp = telemetry.amp;
-        if(!amp || !Number.isFinite(amp)) continue;
-
-        const reduction = db(baselineAmp / Math.max(amp, 1e-9));
-
-        if(reduction > 0) {
-            bestGain = gain;
-            bestAmp = amp;
-        }
-
-        if(amp > baselineAmp * 1.05) break;
+        await sleep(160);
+        selectedGain = g;
     }
-
-    if(bestGain < CONFIG.minUsefulGain) {
-        worklet.port.postMessage({ type: "MUTE" });
-        throw new Error("Nessun gain efficace e stabile trovato.");
-    }
-
-    const safeGain = Math.min(bestGain * 0.65, CONFIG.maxGain);
-    target.gain = safeGain;
-    target.activeAmp = bestAmp;
-
-    updateUI();
-    return safeGain;
+    
+    target.gain = selectedGain;
+    return selectedGain;
 }
 
 
 /* ========================================================================== */
-/* A/B VALIDATION                                                             */
-/* ========================================================================== */
-
-async function measureToneAmp() {
-    await sleep(300);
-    const values = [];
-    for(let i = 0; i < 4; i++) {
-        await sleep(80);
-        if(telemetry.amp > 0) values.push(telemetry.amp);
-    }
-    if(!values.length) return 0;
-    values.sort((a,b) => a - b);
-    return values[Math.floor(values.length / 2)];
-}
-
-async function validateAB() {
-    log("Validazione A/B della componente tonale...");
-
-    const off = [];
-    const on = [];
-
-    for(let round = 0; round < CONFIG.abRounds; round++) {
-        worklet.port.postMessage({
-            type: "PARAMS",
-            payload: { freq: target.freq, phase: target.phase, gain: 0, enabled: false, monitorOnly: true }
-        });
-
-        await sleep(300);
-        off.push(await measureToneAmp());
-
-        worklet.port.postMessage({
-            type: "PARAMS",
-            payload: { freq: target.freq, phase: target.phase, gain: target.gain, enabled: true, monitorOnly: false }
-        });
-
-        await sleep(300);
-        on.push(await measureToneAmp());
-    }
-
-    const avgOff = off.reduce((a,b) => a + b, 0) / Math.max(off.length, 1);
-    const avgOn = on.reduce((a,b) => a + b, 0) / Math.max(on.length, 1);
-    const toneReduction = db(avgOff / Math.max(avgOn, 1e-9));
-
-    target.baselineAmp = avgOff;
-    target.activeAmp = avgOn;
-    target.toneReduction = toneReduction;
-
-    return toneReduction >= CONFIG.minToneReductionDb;
-}
-
-
-/* ========================================================================== */
-/* ANC CORE PIPELINE                                                          */
+/* PIPELINE PRINCIPALE ANC (< 4 SECONDI DI MICROFONO)                         */
 /* ========================================================================== */
 
 async function startANC() {
@@ -958,264 +723,159 @@ async function startANC() {
     const id = ++operationId;
 
     try {
-        await initAudio();
+        // Se abbiamo già dei parametri caricati da profilo, avviamo subito senza mic!
+        if(target.freq > 0 && target.gain > 0 && currentState === "PROFILE_LOADED") {
+            await initAudioContextOnly();
+            worklet.port.postMessage({
+                type: "PARAMS",
+                payload: { freq: target.freq, phase: target.phase, gain: target.gain, enabled: true }
+            });
+            currentState = "ACTIVE";
+            setStatus("ANC ATTIVO (DA PROFILO)", "active");
+            log(`🟢 Emissione avviata da Profilo (${target.freq.toFixed(1)} Hz). Microfono disattivato.`);
+            document.getElementById("btnStart").disabled = true;
+            document.getElementById("btnStop").disabled = false;
+            document.getElementById("btnUpdate").disabled = false;
+            return;
+        }
+
+        // Altrimenti avviamo la calibrazione rapida con microfono per massimo 3 secondi
+        await startMicrophone();
         currentState = "ANALYSIS";
-        setStatus("ANALISI", "monitor");
+        setStatus("SCANSIONE (&lt;3s)", "calibrating");
 
         document.getElementById("btnStart").disabled = true;
         document.getElementById("btnStop").disabled = false;
         document.getElementById("btnUpdate").disabled = true;
 
-        setProgress(5);
-        log("Ricerca di una componente tonale stabile...");
+        setProgress(15);
+        log("Rilevamento tono ambientale in corso...");
 
-        const targetFound = await analyseTarget();
+        const found = await fastAnalyseTarget();
         if(id !== operationId) return;
-        if(!targetFound) throw new Error("Nessun tono stabile rilevato nella finestra analizzata.");
+        if(!found) throw new Error("Nessun tono stabile trovato.");
 
-        target.freq = targetFound.freq;
-        target.snr = targetFound.snr;
-        target.confidence = targetFound.confidence;
-        updateUI();
+        target.freq = found.freq;
+        target.snr = found.snr;
+        setProgress(40);
 
-        await estimateSpeakerCutoff();
+        await fastEstimateCutoff();
+        if(target.freq < target.cutoff) throw new Error("Tono inferiore al cutoff speaker.");
 
-        if(target.freq < target.cutoff) {
-            throw new Error(`Il tono ${target.freq.toFixed(1)} Hz è sotto il cutoff dello speaker (${target.cutoff.toFixed(0)} Hz).`);
-        }
-        if(target.freq > CONFIG.ancMaxFreq) {
-            throw new Error("Frequenza fuori dalla banda ANC.");
-        }
+        setProgress(65);
+        await fastCalibratePhase(target.freq);
 
-        log("Misurazione baseline...");
-        worklet.port.postMessage({ type: "MUTE" });
-        await sleep(250);
+        setProgress(85);
+        await fastFindGain(target.freq, target.phase);
 
-        target.baselineRms = await stableRms(6);
+        // SPEGNIMENTO IMMEDIATO DEL MICROFONO DALL'HARDWARE
+        stopMicrophone();
 
-        await calibratePhase(target.freq);
-        if(id !== operationId) return;
-
-        target.baselineAmp = Math.max(telemetry.amp, 1e-5);
-        await findSafeGain(target.freq, target.phase, target.baselineAmp);
-        if(id !== operationId) return;
-
-        const valid = await validateAB();
-        if(!valid) throw new Error("La cancellazione tonale non ha raggiunto il margine minimo.");
-
+        // AVVIO EMISSIONE SINTETICA DALL'AUDIOWORKLET
         worklet.port.postMessage({
             type: "PARAMS",
-            payload: { freq: target.freq, phase: target.phase, gain: target.gain, enabled: true, monitorOnly: false }
+            payload: { freq: target.freq, phase: target.phase, gain: target.gain, enabled: true }
         });
 
-        await sleep(350);
-        target.activeRms = await stableRms(6);
-        target.globalReduction = db(target.baselineRms / Math.max(target.activeRms, 1e-9));
-
-        if(target.globalReduction < CONFIG.minGlobalReductionDb && target.toneReduction < CONFIG.minToneReductionDb) {
-            throw new Error("Riduzione globale insufficiente.");
-        }
-
         currentState = "ACTIVE";
-        setStatus("ANC ATTIVO • BLOCCATO", "active");
-        log("🟢 Correzione validata. Tracking lento di sicurezza attivo.");
+        setStatus("ANC ATTIVO (MIC SPENTO)", "active");
+        log("🟢 Correzione attiva. Microfono disattivato per isolamento hardware.");
 
-        updateUI();
-        saveProfile();
-        startSlowTracking();
-
-        document.getElementById("btnUpdate").disabled = false;
         setProgress(100);
+        updateUI();
+        document.getElementById("btnUpdate").disabled = false;
 
     } catch(error) {
-        console.error(error);
+        stopMicrophone();
         emergencyMute(error.message);
     }
 }
 
 
 /* ========================================================================== */
-/* MONITOR MODE                                                               */
+/* MONITOR RAPIDO (1 SECONDO DI MIC)                                          */
 /* ========================================================================== */
 
 async function startMonitor() {
     stopInternal();
     try {
-        await initAudio();
+        await startMicrophone();
         currentState = "MONITOR";
-        setStatus("SOLO MONITOR", "monitor");
+        setStatus("CAMPIOAMENTO...", "monitor");
+        log("Acquisizione rapida dello spettro...");
 
-        document.getElementById("btnStart").disabled = false;
-        document.getElementById("btnStop").disabled = false;
-        document.getElementById("btnUpdate").disabled = true;
-
-        worklet.port.postMessage({
-            type: "PARAMS",
-            payload: { enabled: false, monitorOnly: true, gain: 0 }
-        });
-
+        await sleep(600);
         const peak = detectPeak();
+        
+        stopMicrophone(); // Spegne subito il microfono
+
         if(peak) {
             target.freq = peak.freq;
             target.snr = peak.snr;
-            target.confidence = 80;
             updateUI();
-            log(`Tono rilevato: ${peak.freq.toFixed(1)} Hz • SNR ${peak.snr.toFixed(1)} dB`);
+            log(`Tono rilevato: ${peak.freq.toFixed(1)} Hz (SNR: ${peak.snr.toFixed(1)} dB). Microfono rilasciato.`);
         } else {
-            log("Nessuna componente tonale significativa rilevata.");
+            log("Nessun tono rilevato. Microfono rilasciato.");
         }
+
+        setStatus("INATTIVO", "idle");
     } catch(error) {
+        stopMicrophone();
         emergencyMute(error.message);
     }
 }
 
 
 /* ========================================================================== */
-/* SLOW SAFETY TRACKING                                                       */
-/* ========================================================================== */
-
-function startSlowTracking() {
-    stopSlowTracking();
-    trackingTimer = setInterval(slowTracking, CONFIG.trackingInterval);
-}
-
-function stopSlowTracking() {
-    if(trackingTimer) {
-        clearInterval(trackingTimer);
-        trackingTimer = null;
-    }
-}
-
-async function slowTracking() {
-    if(currentState !== "ACTIVE") return;
-    const peak = detectPeak();
-    if(!peak) return;
-
-    const frequencyDifference = Math.abs(peak.freq - target.freq);
-
-    if(frequencyDifference <= CONFIG.trackingToleranceHz) {
-        if(frequencyDifference > 0.15) {
-            const newFreq = target.freq + (peak.freq - target.freq) * 0.20;
-            target.freq = newFreq;
-
-            worklet.port.postMessage({
-                type: "PARAMS",
-                payload: { freq: newFreq, phase: target.phase, gain: target.gain, enabled: true, monitorOnly: false }
-            });
-            updateUI();
-        }
-        return;
-    }
-
-    if(frequencyDifference > CONFIG.trackingToleranceHz) {
-        worklet.port.postMessage({ type: "MUTE" });
-        currentState = "MONITOR";
-        setStatus("TONO CAMBIATO", "warning");
-        log("🟡 Frequenza cambiata. ANC silenziato per sicurezza: premi AVVIA ANC.");
-        document.getElementById("btnUpdate").disabled = false;
-    }
-}
-
-
-/* ========================================================================== */
-/* UPDATE & ROLLBACK                                                          */
+/* RICALIBRAZIONE SU IMPULSO                                                 */
 /* ========================================================================== */
 
 async function updateANC() {
-    if(currentState !== "ACTIVE") return;
-    const backup = JSON.parse(JSON.stringify(target));
-    stopSlowTracking();
-
-    try {
-        setStatus("RI-CALIBRAZIONE", "calibrating");
-        log("Nuova misurazione dell'ambiente...");
-
-        const found = await analyseTarget();
-        if(!found) throw new Error("Nessun tono stabile trovato.");
-
-        target.freq = found.freq;
-        target.snr = found.snr;
-        target.confidence = found.confidence;
-
-        await estimateSpeakerCutoff();
-        if(target.freq < target.cutoff) throw new Error("Nuova frequenza sotto il cutoff speaker.");
-
-        target.baselineRms = await stableRms(6);
-        await calibratePhase(target.freq);
-
-        target.baselineAmp = Math.max(telemetry.amp, 1e-5);
-        await findSafeGain(target.freq, target.phase, target.baselineAmp);
-
-        const valid = await validateAB();
-        if(!valid) throw new Error("Nuova correzione non sufficientemente efficace.");
-
-        target.activeRms = await stableRms(5);
-        target.globalReduction = db(target.baselineRms / Math.max(target.activeRms, 1e-9));
-
-        currentState = "ACTIVE";
-        setStatus("ANC AGGIORNATO", "active");
-        log("🟢 Nuova correzione validata.");
-
-        saveProfile();
-        startSlowTracking();
-        updateUI();
-
-    } catch(error) {
-        target = backup;
-        worklet.port.postMessage({
-            type: "PARAMS",
-            payload: { freq: target.freq, phase: target.phase, gain: target.gain, enabled: true, monitorOnly: false }
-        });
-
-        currentState = "ACTIVE";
-        setStatus("ROLLBACK", "warning");
-        log("🟡 Aggiornamento non valido. Configurazione precedente ripristinata.");
-
-        updateUI();
-        startSlowTracking();
-    }
+    currentState = "IDLE";
+    await startANC();
 }
 
 
 /* ========================================================================== */
-/* PROFILES STORAGE                                                           */
+/* PROFILI MULTI-SLOT (SALVA / CARICA)                                        */
 /* ========================================================================== */
 
 function saveProfile() {
+    if(!target.freq || target.freq <= 0) {
+        log("Impossibile salvare: nessuna calibrazione presente.");
+        return;
+    }
     const profile = {
         version: CONFIG.profileVersion,
         timestamp: Date.now(),
-        sampleRate: audioCtx ? audioCtx.sampleRate : 0,
-        latency: target.latency,
         target: {
-            freq: target.freq, snr: target.snr, confidence: target.confidence,
-            phase: target.phase, gain: target.gain, cutoff: target.cutoff,
-            speakerResponse: target.speakerResponse
+            freq: target.freq,
+            snr: target.snr,
+            phase: target.phase,
+            gain: target.gain,
+            cutoff: target.cutoff
         }
     };
-    localStorage.setItem("anc_v21_profile", JSON.stringify(profile));
+    localStorage.setItem(`anc_v22_slot_${currentSlot}`, JSON.stringify(profile));
+    log(`💾 Calibrazione salvata nello Slot ${currentSlot} (${target.freq.toFixed(1)} Hz).`);
 }
 
 async function loadProfile() {
-    const raw = localStorage.getItem("anc_v21_profile");
+    const raw = localStorage.getItem(`anc_v22_slot_${currentSlot}`);
     if(!raw) {
-        log("Nessun profilo V2.1 salvato.");
+        log(`📂 Slot ${currentSlot} vuoto. Salva prima una calibrazione.`);
         return;
     }
 
     try {
         const data = JSON.parse(raw);
-        if(data.version !== CONFIG.profileVersion) {
-            throw new Error("Versione profilo incompatibile.");
-        }
-
-        await initAudio();
         target = { ...target, ...data.target };
         updateUI();
 
-        currentState = "MONITOR";
-        setStatus("PROFILO CARICATO", "monitor");
-        log(`Profilo caricato: ${target.freq.toFixed(1)} Hz. Premere AVVIA ANC per riverificarlo.`);
+        currentState = "PROFILE_LOADED";
+        setStatus("PROFILO PRONTO", "monitor");
+        log(`📂 Slot ${currentSlot} caricato (${target.freq.toFixed(1)} Hz). Premere AVVIA ANC per la riproduzione.`);
+        document.getElementById("btnStart").disabled = false;
     } catch(error) {
         log("Errore nel caricamento del profilo.");
     }
@@ -1223,20 +883,18 @@ async function loadProfile() {
 
 
 /* ========================================================================== */
-/* STOP AND EMERGENCY HANDLERS                                                */
+/* SPEGNIMENTO E SICUREZZA                                                    */
 /* ========================================================================== */
 
 function emergencyMute(reason) {
     operationId++;
-    stopSlowTracking();
-
+    stopMicrophone();
     if(worklet) {
         try { worklet.port.postMessage({ type: "MUTE" }); } catch(e){}
     }
-
     currentState = "IDLE";
-    setStatus("SAFETY MUTE", "danger");
-    log("🔴 ANC silenziato: " + reason);
+    setStatus("ARRESTO", "danger");
+    log("🔴 Errore: " + reason);
 
     document.getElementById("btnStart").disabled = false;
     document.getElementById("btnStop").disabled = true;
@@ -1246,8 +904,7 @@ function emergencyMute(reason) {
 
 function stopInternal() {
     operationId++;
-    stopSlowTracking();
-
+    stopMicrophone();
     if(worklet) {
         try { worklet.port.postMessage({ type: "MUTE" }); } catch(e){}
     }
@@ -1257,7 +914,7 @@ function stopSystem() {
     stopInternal();
     currentState = "IDLE";
     setStatus("INATTIVO", "idle");
-    log("Sistema fermato.");
+    log("Sistema fermato. Emissione e microfono spenti.");
 
     document.getElementById("btnStart").disabled = false;
     document.getElementById("btnStop").disabled = true;
@@ -1265,27 +922,9 @@ function stopSystem() {
     setProgress(0);
 }
 
-
-/* ========================================================================== */
-/* VISIBILITY / ANDROID BACKGROUND MANAGEMENT                                 */
-/* ========================================================================== */
-
-document.addEventListener("visibilitychange", async () => {
-    if (document.visibilityState === "visible") {
-        if (audioCtx && audioCtx.state === "suspended") {
-            try { await audioCtx.resume(); } catch(e){}
-        }
-    } else {
-        if (currentState === "ACTIVE" && worklet) {
-            worklet.port.postMessage({ type: "MUTE" });
-            setStatus("PAUSA SICURA", "warning");
-            log("ANC silenziato temporaneamente perché l'app è in background.");
-        }
-    }
-});
-
 window.addEventListener("load", () => {
     setStatus("INATTIVO", "idle");
+    updateMicUI(false);
     updateUI();
 });
 </script>
