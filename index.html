@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#080d11">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="ANC V2.2">
+<meta name="application-name" content="ANC V2.2 Multi">
 
 <link rel="manifest" href="/reduce-noise/manifest.json">
 
-<title>ANC V2.2 - Pure Tone Core</title>
+<title>ANC V2.2 - Multi-Harmonic Core</title>
 
 <style>
 *{
@@ -92,6 +92,9 @@ h1{
     font-weight:bold;
     text-transform:uppercase;
     margin-bottom:9px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
 }
 
 .grid{
@@ -119,7 +122,7 @@ h1{
 }
 
 .log{
-    min-height:50px;
+    min-height:45px;
     font-size:11px;
     line-height:1.45;
     color:#aab6bf;
@@ -140,6 +143,49 @@ h1{
     background:#3498db;
     transition:width .15s linear;
 }
+
+/* TOGGLE SWITCH */
+.toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:11px;
+    color:#9aa8b2;
+    padding:4px 0;
+}
+
+.toggle{
+    position:relative;
+    width:42px;
+    height:22px;
+}
+
+.toggle input{ display:none; }
+
+.slider{
+    position:absolute;
+    inset:0;
+    background:#1c2a36;
+    border-radius:20px;
+    cursor:pointer;
+    border:1px solid #2c3e50;
+    transition:.2s;
+}
+
+.slider:before{
+    content:"";
+    position:absolute;
+    width:16px;
+    height:16px;
+    left:2px;
+    top:2px;
+    background:#ecf0f1;
+    border-radius:50%;
+    transition:.2s;
+}
+
+.toggle input:checked + .slider{ background:#27ae60; border-color:#2ecc71; }
+.toggle input:checked + .slider:before{ transform:translateX(20px); }
 
 /* SLOT SELECTOR */
 .slot-grid{
@@ -209,11 +255,6 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
     font-size:9px;
     line-height:1.45;
 }
-
-@media(max-width:380px){
-    .container{ padding:15px; }
-    .stat strong{ font-size:12px; }
-}
 </style>
 </head>
 
@@ -221,24 +262,35 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
 
 <div class="container">
 
-    <h1>ANC V2.2</h1>
+    <h1>ANC V2.2 MULTI</h1>
 
     <div class="subtitle">
-        Pure Tone Synthesis • Microfono Limitato (&lt;4s) • 4 Profili
+        Sintesi Multi-Armonica • Microfono &lt;3s • Posizione 50cm
     </div>
 
     <div id="status" class="status idle">
         STATO: INATTIVO
     </div>
 
+    <!-- MODALITÀ HARDWARE -->
+    <div class="panel">
+        <div class="toggle-row">
+            <span>Modalità Speaker Smartphone (Cutoff 120Hz)</span>
+            <label class="toggle">
+                <input type="checkbox" id="chkMobileMode" checked onchange="updateHardwareLimits()">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
     <div class="panel">
         <div class="section-title">Diagnostica Operativa</div>
         <div class="grid">
-            <div class="stat">Frequenza target<strong id="uiFreq">---</strong></div>
-            <div class="stat">SNR<strong id="uiSnr">---</strong></div>
-            <div class="stat">Fase calibrata<strong id="uiPhase">---</strong></div>
-            <div class="stat">Gain ANC<strong id="uiGain">---</strong></div>
-            <div class="stat">Cutoff speaker<strong id="uiCutoff">---</strong></div>
+            <div class="stat">Fondamentale (f0)<strong id="uiFreq">---</strong></div>
+            <div class="stat">SNR Spettro<strong id="uiSnr">---</strong></div>
+            <div class="stat">Fase Calibrata<strong id="uiPhase">---</strong></div>
+            <div class="stat">Gain Conservativo<strong id="uiGain">---</strong></div>
+            <div class="stat">Cutoff Altoparlante<strong id="uiCutoff">120 Hz</strong></div>
             <div class="stat">Stato Microfono<strong id="uiMicState">SPENTO</strong></div>
         </div>
     </div>
@@ -246,7 +298,7 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
     <div class="panel">
         <div class="section-title">Stato sistema</div>
         <div id="uiLog" class="log">
-            Pronto. Seleziona uno Slot o premi AVVIA ANC per calibrare.
+            Pronto. Posizionare lo smartphone a ~50cm e premere AVVIA ANC.
         </div>
         <div class="progress">
             <div id="progressBar" class="progress-bar"></div>
@@ -277,7 +329,7 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
         </button>
 
         <button class="start" id="btnStart" onclick="handleUserTrigger(startANC);">
-            ▶ AVVIA ANC
+            ▶ AVVIA ANC MULTI
         </button>
 
         <button class="stop" id="btnStop" onclick="handleUserTrigger(stopSystem);" disabled>
@@ -285,13 +337,13 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
         </button>
 
         <button class="update" id="btnUpdate" onclick="handleUserTrigger(updateANC);" disabled>
-            🔄 RICALIBRA (&lt; 4s)
+            🔄 RICALIBRA (&lt; 3s)
         </button>
     </div>
 
     <div class="notice">
-        Il microfono si attiva solo per massimo 3 secondi durante l'ottimizzazione.
-        A calibrazione ultimata l'hardware emette solo il tono puro senza ascolto.
+        Il microfono ascolta solo durante la scansione di 3 secondi per prevenire il feedback acustico.
+        La cancellazione multi-armonica applica un guadagno conservativo non saturo (max 45%).
     </div>
 
 </div>
@@ -299,40 +351,41 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
 <script>
 
 /* ========================================================================== */
-/* CONFIGURAZIONE OTTIMIZZATA PER RUNTIME BREVE                               */
+/* CONFIGURAZIONE OTTIMIZZATA PER RUMORI REALI                                */
 /* ========================================================================== */
 
 const CONFIG = {
-    scanMinFreq: 80,
-    scanMaxFreq: 320,
-    ancMinFreq: 100,
-    ancMaxFreq: 300,
+    scanMinFreq: 50,
+    scanMaxFreq: 350,
     fftSize: 4096,
     minPeakDb: -68,
-    minSnrDb: 6,
-    maxFreqDeviation: 1.5,
-    calibrationGain: 0.035,
-    calibrationTime: 450,
-    calibrationSettling: 150,
-    maxGain: 0.22,
-    minUsefulGain: 0.015,
-    profileVersion: "2.2-slots"
+    minSnrDb: 5,
+    
+    // Fattore conservativo globale (45% della potenza massima)
+    AUTO_CORRECTION_DEPTH: 0.45,
+    maxGain: 0.18, 
+    
+    mobileCutoff: 120,
+    extendedCutoff: 60,
+    profileVersion: "2.2-multi"
 };
 
 
 /* ========================================================================== */
-/* AUDIOWORKLET (PURE SINE EMITTER)                                           */
+/* AUDIOWORKLET MULTI-ARMONICO (3 COMPONENTI SINUSOIDALI)                    */
 /* ========================================================================== */
 
 const WORKLET_CODE = `
-class ANCProcessor extends AudioWorkletProcessor {
+class MultiHarmonicANCProcessor extends AudioWorkletProcessor {
     constructor(){
         super();
-        this.freq = 150;
-        this.phase = 0;
-        this.gain = 0;
+        this.f0 = 150;
+        this.phase0 = 0;
+        this.gain0 = 0;
+        
         this.targetGain = 0;
         this.enabled = false;
+        
         this.phaseAccumulator = 0;
         this.sampleCounter = 0;
         this.refI = 0;
@@ -342,15 +395,15 @@ class ANCProcessor extends AudioWorkletProcessor {
             const data = event.data || {};
             if(data.type === "PARAMS") {
                 const p = data.payload || {};
-                if(Number.isFinite(p.freq)) this.freq = p.freq;
-                if(Number.isFinite(p.phase)) this.phase = p.phase;
-                if(Number.isFinite(p.gain)) this.targetGain = p.gain;
+                if(Number.isFinite(p.f0)) this.f0 = p.f0;
+                if(Number.isFinite(p.phase0)) this.phase0 = p.phase0;
+                if(Number.isFinite(p.gain0)) this.targetGain = p.gain0;
                 if(typeof p.enabled === "boolean") this.enabled = p.enabled;
             }
             if(data.type === "MUTE") {
                 this.enabled = false;
                 this.targetGain = 0;
-                this.gain = 0;
+                this.gain0 = 0;
             }
         };
     }
@@ -360,27 +413,43 @@ class ANCProcessor extends AudioWorkletProcessor {
         if(!output) return true;
 
         const input = inputs[0] && inputs[0][0];
-        const omega = 2 * Math.PI * this.freq / sampleRate;
+        const omega0 = 2 * Math.PI * this.f0 / sampleRate;
         const TWO_PI = 2 * Math.PI;
 
         for(let i = 0; i < output.length; i++) {
-            // Misurazione I/Q solo se il microfono è fisicamente connesso
+            // Telemetria I/Q per la calibrazione rapida
             if(input && input[i] !== undefined) {
                 const x = input[i];
-                const refPhase = omega * this.sampleCounter;
+                const refPhase = omega0 * this.sampleCounter;
                 this.refI += x * Math.cos(refPhase);
                 this.refQ += x * Math.sin(refPhase);
                 this.sampleCounter++;
             }
 
-            // Accumulatore di fase senza deriva
-            this.phaseAccumulator = (this.phaseAccumulator + omega) % TWO_PI;
-            this.gain += (this.targetGain - this.gain) * 0.008;
+            // Accumulatore di fase per la fondamentale
+            this.phaseAccumulator = (this.phaseAccumulator + omega0) % TWO_PI;
+            
+            // Rampa morbida del guadagno per evitare click audio
+            this.gain0 += (this.targetGain - this.gain0) * 0.008;
 
-            if(this.enabled) {
-                let p = (this.phaseAccumulator + this.phase) % TWO_PI;
-                if (p < 0) p += TWO_PI;
-                output[i] = Math.sin(p) * this.gain;
+            if(this.enabled && this.f0 > 0) {
+                // Fondamentale (1x f0)
+                let p1 = (this.phaseAccumulator + this.phase0) % TWO_PI;
+                if (p1 < 0) p1 += TWO_PI;
+                let s1 = Math.sin(p1) * this.gain0;
+
+                // Seconda Armonica (2x f0) - Guadagno 40% di f0
+                let p2 = (2 * this.phaseAccumulator + this.phase0 * 1.5) % TWO_PI;
+                if (p2 < 0) p2 += TWO_PI;
+                let s2 = Math.sin(p2) * (this.gain0 * 0.40);
+
+                // Terza Armonica (3x f0) - Guadagno 20% di f0
+                let p3 = (3 * this.phaseAccumulator + this.phase0 * 2.0) % TWO_PI;
+                if (p3 < 0) p3 += TWO_PI;
+                let s3 = Math.sin(p3) * (this.gain0 * 0.20);
+
+                // Somma multi-armonica
+                output[i] = s1 + s2 + s3;
             } else {
                 output[i] = 0;
             }
@@ -398,7 +467,7 @@ class ANCProcessor extends AudioWorkletProcessor {
         return true;
     }
 }
-registerProcessor("anc-iq-processor", ANCProcessor);
+registerProcessor("anc-multi-processor", MultiHarmonicANCProcessor);
 `;
 
 
@@ -412,7 +481,6 @@ let micSource = null;
 let analyser = null;
 let worklet = null;
 
-let sharedTimeBuffer = null;
 let sharedFreqBuffer = null;
 
 let currentState = "IDLE";
@@ -421,9 +489,9 @@ let currentSlot = 1;
 
 let telemetry = { amp: 0, phase: 0 };
 let target = {
-    freq: 0, snr: 0, confidence: 0,
+    freq: 0, snr: 0,
     phase: Math.PI, gain: 0,
-    cutoff: CONFIG.ancMinFreq
+    cutoff: CONFIG.mobileCutoff
 };
 
 
@@ -433,9 +501,6 @@ let target = {
 
 function ensureBuffers() {
     if (!analyser) return;
-    if (!sharedTimeBuffer || sharedTimeBuffer.length !== analyser.fftSize) {
-        sharedTimeBuffer = new Float32Array(analyser.fftSize);
-    }
     if (!sharedFreqBuffer || sharedFreqBuffer.length !== analyser.frequencyBinCount) {
         sharedFreqBuffer = new Float32Array(analyser.frequencyBinCount);
     }
@@ -481,6 +546,12 @@ function updateMicUI(active) {
     }
 }
 
+function updateHardwareLimits() {
+    const isMobile = document.getElementById("chkMobileMode").checked;
+    target.cutoff = isMobile ? CONFIG.mobileCutoff : CONFIG.extendedCutoff;
+    document.getElementById("uiCutoff").innerText = target.cutoff + " Hz";
+}
+
 
 /* ========================================================================== */
 /* SELEZIONE SLOT PROFILO                                                     */
@@ -511,14 +582,14 @@ function selectSlot(slotNum) {
 function updateUI() {
     document.getElementById("uiFreq").innerText = target.freq ? target.freq.toFixed(1) + " Hz" : "---";
     document.getElementById("uiSnr").innerText = target.snr ? target.snr.toFixed(1) + " dB" : "---";
-    document.getElementById("uiCutoff").innerText = target.cutoff ? target.cutoff.toFixed(0) + " Hz" : "---";
+    document.getElementById("uiCutoff").innerText = target.cutoff + " Hz";
     document.getElementById("uiGain").innerText = (target.gain * 100).toFixed(1) + " %";
     document.getElementById("uiPhase").innerText = (target.phase * 180 / Math.PI).toFixed(0) + "°";
 }
 
 
 /* ========================================================================== */
-/* GESTIONE AUDIO & CHIUSURA MICROFONO STRICT < 4S                             */
+/* GESTIONE AUDIO & CHIUSURA MICROFONO STRICT                                 */
 /* ========================================================================== */
 
 async function initAudioContextOnly() {
@@ -537,7 +608,7 @@ async function initAudioContextOnly() {
         await audioCtx.audioWorklet.addModule(url);
         URL.revokeObjectURL(url);
 
-        worklet = new AudioWorkletNode(audioCtx, "anc-iq-processor", {
+        worklet = new AudioWorkletNode(audioCtx, "anc-multi-processor", {
             numberOfInputs: 1,
             numberOfOutputs: 1,
             outputChannelCount: [1]
@@ -558,8 +629,7 @@ async function startMicrophone() {
     if(!micStream) {
         micStream = await navigator.mediaDevices.getUserMedia({
             audio: {
-                echoCancellation: false, noiseSuppression: false, autoGainControl: false,
-                googEchoCancellation: false, googNoiseSuppression: false, googAutoGainControl: false
+                echoCancellation: false, noiseSuppression: false, autoGainControl: false
             }
         });
 
@@ -593,7 +663,7 @@ function stopMicrophone() {
 
 
 /* ========================================================================== */
-/* ESTRAZIONE SPECIALE AD ALTA VELOCITÀ (NO GC)                               */
+/* RILEVAMENTO PICCO E INTERPOLAZIONE PARABOLICA                              */
 /* ========================================================================== */
 
 function detectPeak() {
@@ -617,6 +687,7 @@ function detectPeak() {
 
     if(peakBin < 0 || peakDb < CONFIG.minPeakDb) return null;
 
+    // Interpolazione parabolica sub-bin
     let delta = 0;
     const denom = sharedFreqBuffer[peakBin-1] - 2 * sharedFreqBuffer[peakBin] + sharedFreqBuffer[peakBin+1];
     if(Math.abs(denom) > 0.0001) {
@@ -649,42 +720,21 @@ async function fastAnalyseTarget() {
 
     const avgFreq = samples.reduce((s,p) => s + p.freq, 0) / samples.length;
     const avgSnr = samples.reduce((s,p) => s + p.snr, 0) / samples.length;
-    return { freq: avgFreq, snr: avgSnr, confidence: 90 };
+    return { freq: avgFreq, snr: avgSnr };
 }
 
 
 /* ========================================================================== */
-/* ROUTINE RAPIDE DI CALIBRAZIONE (< 2.5s TOTALE)                             */
+/* CALIBRAZIONE RAPIDA DI FASE E GUADAGNO CONSERVATIVO                        */
 /* ========================================================================== */
 
-async function fastEstimateCutoff() {
-    const testFreqs = [100, 120, 140];
-    let cutoff = CONFIG.ancMinFreq;
-
-    for(const f of testFreqs) {
-        worklet.port.postMessage({
-            type: "PARAMS",
-            payload: { freq: f, phase: 0, gain: CONFIG.calibrationGain, enabled: true }
-        });
-        await sleep(150);
-        if(telemetry.amp > 0.005) {
-            cutoff = Math.max(90, f - 10);
-            break;
-        }
-    }
-    worklet.port.postMessage({ type: "MUTE" });
-    target.cutoff = cutoff;
-    return cutoff;
-}
-
-async function fastCalibratePhase(freq) {
+async function fastCalibratePhase(f0) {
     worklet.port.postMessage({
         type: "PARAMS",
-        payload: { freq, phase: 0, gain: CONFIG.calibrationGain, enabled: true }
+        payload: { f0, phase0: 0, gain0: 0.03, enabled: true }
     });
 
-    await sleep( CONFIG.calibrationSettling );
-    await sleep( CONFIG.calibrationTime );
+    await sleep(250);
 
     worklet.port.postMessage({ type: "MUTE" });
 
@@ -696,26 +746,16 @@ async function fastCalibratePhase(freq) {
     return correction;
 }
 
-async function fastFindGain(freq, phase) {
-    const steps = [0.04, 0.08, 0.12, 0.16];
-    let selectedGain = 0.08;
-
-    for(const g of steps) {
-        worklet.port.postMessage({
-            type: "PARAMS",
-            payload: { freq, phase, gain: g, enabled: true }
-        });
-        await sleep(160);
-        selectedGain = g;
-    }
-    
-    target.gain = selectedGain;
-    return selectedGain;
+function calculateConservativeGain(snrDb) {
+    // Applica una riduzione scalata con fattore conservativo (45% dell'ottimo)
+    let estimated = (snrDb / 35) * CONFIG.maxGain;
+    let conservative = estimated * CONFIG.AUTO_CORRECTION_DEPTH;
+    return clamp(conservative, 0.02, CONFIG.maxGain);
 }
 
 
 /* ========================================================================== */
-/* PIPELINE PRINCIPALE ANC (< 4 SECONDI DI MICROFONO)                         */
+/* PIPELINE PRINCIPALE ANC (< 3 SECONDI TOTALE)                               */
 /* ========================================================================== */
 
 async function startANC() {
@@ -723,23 +763,21 @@ async function startANC() {
     const id = ++operationId;
 
     try {
-        // Se abbiamo già dei parametri caricati da profilo, avviamo subito senza mic!
         if(target.freq > 0 && target.gain > 0 && currentState === "PROFILE_LOADED") {
             await initAudioContextOnly();
             worklet.port.postMessage({
                 type: "PARAMS",
-                payload: { freq: target.freq, phase: target.phase, gain: target.gain, enabled: true }
+                payload: { f0: target.freq, phase0: target.phase, gain0: target.gain, enabled: true }
             });
             currentState = "ACTIVE";
-            setStatus("ANC ATTIVO (DA PROFILO)", "active");
-            log(`🟢 Emissione avviata da Profilo (${target.freq.toFixed(1)} Hz). Microfono disattivato.`);
+            setStatus("ANC MULTI ATTIVO (PROFILO)", "active");
+            log(`🟢 Sintesi Multi-Armonica attiva (${target.freq.toFixed(1)} Hz). Microfono spento.`);
             document.getElementById("btnStart").disabled = true;
             document.getElementById("btnStop").disabled = false;
             document.getElementById("btnUpdate").disabled = false;
             return;
         }
 
-        // Altrimenti avviamo la calibrazione rapida con microfono per massimo 3 secondi
         await startMicrophone();
         currentState = "ANALYSIS";
         setStatus("SCANSIONE (&lt;3s)", "calibrating");
@@ -748,38 +786,40 @@ async function startANC() {
         document.getElementById("btnStop").disabled = false;
         document.getElementById("btnUpdate").disabled = true;
 
-        setProgress(15);
-        log("Rilevamento tono ambientale in corso...");
+        setProgress(20);
+        log("Rilevamento rumore ambientale e armoniche...");
 
         const found = await fastAnalyseTarget();
         if(id !== operationId) return;
-        if(!found) throw new Error("Nessun tono stabile trovato.");
+        if(!found) throw new Error("Nessun tono stabile rilevato.");
 
         target.freq = found.freq;
         target.snr = found.snr;
-        setProgress(40);
+        setProgress(50);
 
-        await fastEstimateCutoff();
-        if(target.freq < target.cutoff) throw new Error("Tono inferiore al cutoff speaker.");
+        updateHardwareLimits();
+        if(target.freq < target.cutoff) {
+            log(`⚠️ Fondamentale ${target.freq.toFixed(1)}Hz sotto il cutoff speaker (${target.cutoff}Hz). Soppressione armoniche superiori.`);
+        }
 
-        setProgress(65);
+        setProgress(75);
         await fastCalibratePhase(target.freq);
 
-        setProgress(85);
-        await fastFindGain(target.freq, target.phase);
+        target.gain = calculateConservativeGain(target.snr);
+        setProgress(90);
 
-        // SPEGNIMENTO IMMEDIATO DEL MICROFONO DALL'HARDWARE
+        // Spegnimento definitivo del microfono
         stopMicrophone();
 
-        // AVVIO EMISSIONE SINTETICA DALL'AUDIOWORKLET
+        // Emissione sintetizzata multi-armonica
         worklet.port.postMessage({
             type: "PARAMS",
-            payload: { freq: target.freq, phase: target.phase, gain: target.gain, enabled: true }
+            payload: { f0: target.freq, phase0: target.phase, gain0: target.gain, enabled: true }
         });
 
         currentState = "ACTIVE";
-        setStatus("ANC ATTIVO (MIC SPENTO)", "active");
-        log("🟢 Correzione attiva. Microfono disattivato per isolamento hardware.");
+        setStatus("ANC MULTI ATTIVO (MIC SPENTO)", "active");
+        log(`🟢 Cancellazione Multi-Armonica attiva per ${target.freq.toFixed(1)} Hz (Gain: ${(target.gain*100).toFixed(1)}%). Microfono spento.`);
 
         setProgress(100);
         updateUI();
@@ -793,7 +833,7 @@ async function startANC() {
 
 
 /* ========================================================================== */
-/* MONITOR RAPIDO (1 SECONDO DI MIC)                                          */
+/* MONITOR RAPIDO                                                             */
 /* ========================================================================== */
 
 async function startMonitor() {
@@ -802,20 +842,20 @@ async function startMonitor() {
         await startMicrophone();
         currentState = "MONITOR";
         setStatus("CAMPIOAMENTO...", "monitor");
-        log("Acquisizione rapida dello spettro...");
+        log("Analisi rapida dello spettro acustico...");
 
         await sleep(600);
         const peak = detectPeak();
         
-        stopMicrophone(); // Spegne subito il microfono
+        stopMicrophone();
 
         if(peak) {
             target.freq = peak.freq;
             target.snr = peak.snr;
             updateUI();
-            log(`Tono rilevato: ${peak.freq.toFixed(1)} Hz (SNR: ${peak.snr.toFixed(1)} dB). Microfono rilasciato.`);
+            log(`Spettro: Fondamentale a ${peak.freq.toFixed(1)} Hz (SNR: ${peak.snr.toFixed(1)} dB).`);
         } else {
-            log("Nessun tono rilevato. Microfono rilasciato.");
+            log("Nessun segnale rilevante nello spettro.");
         }
 
         setStatus("INATTIVO", "idle");
@@ -825,11 +865,6 @@ async function startMonitor() {
     }
 }
 
-
-/* ========================================================================== */
-/* RICALIBRAZIONE SU IMPULSO                                                 */
-/* ========================================================================== */
-
 async function updateANC() {
     currentState = "IDLE";
     await startANC();
@@ -837,12 +872,12 @@ async function updateANC() {
 
 
 /* ========================================================================== */
-/* PROFILI MULTI-SLOT (SALVA / CARICA)                                        */
+/* PROFILI MULTI-SLOT                                                         */
 /* ========================================================================== */
 
 function saveProfile() {
     if(!target.freq || target.freq <= 0) {
-        log("Impossibile salvare: nessuna calibrazione presente.");
+        log("Nessuna calibrazione da salvare.");
         return;
     }
     const profile = {
@@ -863,7 +898,7 @@ function saveProfile() {
 async function loadProfile() {
     const raw = localStorage.getItem(`anc_v22_slot_${currentSlot}`);
     if(!raw) {
-        log(`📂 Slot ${currentSlot} vuoto. Salva prima una calibrazione.`);
+        log(`📂 Slot ${currentSlot} vuoto.`);
         return;
     }
 
@@ -874,16 +909,16 @@ async function loadProfile() {
 
         currentState = "PROFILE_LOADED";
         setStatus("PROFILO PRONTO", "monitor");
-        log(`📂 Slot ${currentSlot} caricato (${target.freq.toFixed(1)} Hz). Premere AVVIA ANC per la riproduzione.`);
+        log(`📂 Slot ${currentSlot} caricato (${target.freq.toFixed(1)} Hz). Premere AVVIA ANC MULTI.`);
         document.getElementById("btnStart").disabled = false;
     } catch(error) {
-        log("Errore nel caricamento del profilo.");
+        log("Errore durante il caricamento del profilo.");
     }
 }
 
 
 /* ========================================================================== */
-/* SPEGNIMENTO E SICUREZZA                                                    */
+/* ARRESTO DI SICUREZZA                                                       */
 /* ========================================================================== */
 
 function emergencyMute(reason) {
@@ -914,7 +949,7 @@ function stopSystem() {
     stopInternal();
     currentState = "IDLE";
     setStatus("INATTIVO", "idle");
-    log("Sistema fermato. Emissione e microfono spenti.");
+    log("Sistema fermato. Riproduzione e microfono disattivati.");
 
     document.getElementById("btnStart").disabled = false;
     document.getElementById("btnStop").disabled = true;
@@ -923,6 +958,7 @@ function stopSystem() {
 }
 
 window.addEventListener("load", () => {
+    updateHardwareLimits();
     setStatus("INATTIVO", "idle");
     updateMicUI(false);
     updateUI();
@@ -930,4 +966,4 @@ window.addEventListener("load", () => {
 </script>
 
 </body>
-</html>
+            </html>
