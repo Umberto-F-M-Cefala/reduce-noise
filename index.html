@@ -9,7 +9,7 @@
 
 <link rel="manifest" href="/reduce-noise/manifest.json">
 
-<title>ANC V2.2 - Multi-Harmonic Core</title>
+<title>ANC V2.2 - Core Multi-Armonico</title>
 
 <style>
 *{
@@ -64,12 +64,13 @@ h1{
 
 .status{
     width:100%;
-    padding:7px 10px;
-    margin-bottom:10px;
+    padding:9px 10px;
+    margin-bottom:12px;
     border-radius:10px;
     text-align:center;
-    font-size:11px;
+    font-size:12px;
     font-weight:bold;
+    letter-spacing:.5px;
 }
 
 .idle{ background:#1c2a36; color:#9aa8b2; }
@@ -82,7 +83,7 @@ h1{
     background:#0b1218;
     padding:13px;
     border-radius:12px;
-    margin:9px 0;
+    margin:10px 0;
     border:1px solid #172430;
 }
 
@@ -92,11 +93,64 @@ h1{
     font-weight:bold;
     text-transform:uppercase;
     margin-bottom:9px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
 }
 
+/* GRIGLIA PULSANTI OPERATIVI */
+.buttons-op{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:10px;
+}
+
+button{
+    border:0;
+    border-radius:8px;
+    padding:13px 10px;
+    color:#fff;
+    font-size:12px;
+    font-weight:bold;
+    cursor:pointer;
+    outline:none;
+    transition:transform .05s,opacity .12s,background-color .15s;
+}
+
+button:active{ transform:scale(.97); }
+button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
+
+.start{ background:#27ae60 }
+.stop{ background:#c0392b }
+.monitor-btn{ background:#2980b9; grid-column:span 2; }
+.update{ background:#8e44ad; grid-column:span 2; }
+
+/* SELEZIONE MODALITÀ CORREZIONE */
+.mode-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:6px;
+}
+
+.mode-btn{
+    background:#16232e;
+    border:1px solid #243746;
+    color:#8e9ea7;
+    padding:10px 4px;
+    border-radius:8px;
+    font-weight:bold;
+    font-size:10px;
+    cursor:pointer;
+    text-align:center;
+    text-transform:uppercase;
+}
+
+.mode-btn.active-mode{
+    background:#27ae60;
+    border-color:#2ecc71;
+    color:#fff;
+    box-shadow:0 0 10px rgba(39,174,96,.35);
+}
+
+/* DIAGNOSTICA & STATO */
 .grid{
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -151,7 +205,9 @@ h1{
     justify-content:space-between;
     font-size:11px;
     color:#9aa8b2;
-    padding:4px 0;
+    padding:4px 0 8px;
+    border-bottom:1px solid #172430;
+    margin-bottom:10px;
 }
 
 .toggle{
@@ -187,73 +243,18 @@ h1{
 .toggle input:checked + .slider{ background:#27ae60; border-color:#2ecc71; }
 .toggle input:checked + .slider:before{ transform:translateX(20px); }
 
-/* SLOT SELECTOR */
-.slot-grid{
-    display:grid;
-    grid-template-columns:repeat(4, 1fr);
-    gap:6px;
-    margin-bottom:10px;
-}
-
-.slot-btn{
-    background:#16232e;
-    border:1px solid #243746;
-    color:#8e9ea7;
-    padding:8px 0;
-    border-radius:6px;
-    font-weight:bold;
-    font-size:11px;
-    cursor:pointer;
-}
-
-.slot-btn.active-slot{
-    background:#2980b9;
-    border-color:#3498db;
-    color:#fff;
-    box-shadow:0 0 8px rgba(52,152,219,.5);
-}
-
-.buttons-profile{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
-}
-
-.buttons{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
-    margin-top:13px;
-}
-
-button{
-    border:0;
-    border-radius:8px;
-    padding:13px 10px;
-    color:#fff;
-    font-size:12px;
-    font-weight:bold;
-    cursor:pointer;
-    outline:none;
-    transition:transform .05s,opacity .12s;
-}
-
-button:active{ transform:scale(.97); }
-button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
-
-.start{ background:#27ae60 }
-.stop{ background:#c0392b }
-.monitor-btn{ background:#2980b9; grid-column:span 2; }
-.update{ background:#8e44ad; grid-column:span 2; }
-.save-btn{ background:#d35400; font-size:11px; }
-.profile{ background:#34495e; font-size:11px; }
-
 .notice{
     margin-top:11px;
     color:#526270;
     text-align:center;
     font-size:9px;
     line-height:1.45;
+}
+
+@media(max-width:380px){
+    .container{ padding:15px; }
+    .stat strong{ font-size:12px; }
+    .mode-btn{ font-size:9px; padding:8px 2px; }
 }
 </style>
 </head>
@@ -265,65 +266,16 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
     <h1>ANC V2.2 MULTI</h1>
 
     <div class="subtitle">
-        Sintesi Multi-Armonica • Microfono &lt;3s • Posizione 50cm
+        Sintesi Multi-Armonica • Campionamento Spaziale ~50cm
     </div>
 
+    <!-- 1. STATO PRINCIPALE -->
     <div id="status" class="status idle">
         STATO: INATTIVO
     </div>
 
-    <!-- MODALITÀ HARDWARE -->
-    <div class="panel">
-        <div class="toggle-row">
-            <span>Modalità Speaker Smartphone (Cutoff 120Hz)</span>
-            <label class="toggle">
-                <input type="checkbox" id="chkMobileMode" checked onchange="updateHardwareLimits()">
-                <span class="slider"></span>
-            </label>
-        </div>
-    </div>
-
-    <div class="panel">
-        <div class="section-title">Diagnostica Operativa</div>
-        <div class="grid">
-            <div class="stat">Fondamentale (f0)<strong id="uiFreq">---</strong></div>
-            <div class="stat">SNR Spettro<strong id="uiSnr">---</strong></div>
-            <div class="stat">Fase Calibrata<strong id="uiPhase">---</strong></div>
-            <div class="stat">Gain Conservativo<strong id="uiGain">---</strong></div>
-            <div class="stat">Cutoff Altoparlante<strong id="uiCutoff">120 Hz</strong></div>
-            <div class="stat">Stato Microfono<strong id="uiMicState">SPENTO</strong></div>
-        </div>
-    </div>
-
-    <div class="panel">
-        <div class="section-title">Stato sistema</div>
-        <div id="uiLog" class="log">
-            Pronto. Posizionare lo smartphone a ~50cm e premere AVVIA ANC.
-        </div>
-        <div class="progress">
-            <div id="progressBar" class="progress-bar"></div>
-        </div>
-    </div>
-
-    <div class="panel">
-        <div class="section-title">Gestione Profili Memoria</div>
-        <div class="slot-grid">
-            <button id="slot1" class="slot-btn active-slot" onclick="selectSlot(1)">Slot 1</button>
-            <button id="slot2" class="slot-btn" onclick="selectSlot(2)">Slot 2</button>
-            <button id="slot3" class="slot-btn" onclick="selectSlot(3)">Slot 3</button>
-            <button id="slot4" class="slot-btn" onclick="selectSlot(4)">Slot 4</button>
-        </div>
-        <div class="buttons-profile">
-            <button class="save-btn" id="btnSave" onclick="handleUserTrigger(saveProfile);">
-                💾 SALVA SU <span id="lblSaveSlot">SLOT 1</span>
-            </button>
-            <button class="profile" id="btnProfile" onclick="handleUserTrigger(loadProfile);">
-                📂 CARICA DA <span id="lblLoadSlot">SLOT 1</span>
-            </button>
-        </div>
-    </div>
-
-    <div class="buttons">
+    <!-- 2. PULSANTI OPERATIVI DI CAMPIONAMENTO / AVVIO / STOP / RICALIBRA -->
+    <div class="buttons-op">
         <button class="monitor-btn" id="btnMonitor" onclick="handleUserTrigger(startMonitor);">
             👁️ CAMPIOAMENTO RAPIDO (1s)
         </button>
@@ -337,13 +289,61 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
         </button>
 
         <button class="update" id="btnUpdate" onclick="handleUserTrigger(updateANC);" disabled>
-            🔄 RICALIBRA (&lt; 3s)
+            🔄 RICALIBRA
         </button>
     </div>
 
+    <!-- 3. SELEZIONE INTENSITÀ CORREZIONE (50%, 70% DEFAULT, 90%) -->
+    <div class="panel">
+        <div class="section-title">Efficienza Correzione</div>
+        <div class="mode-grid">
+            <button id="btnMode50" class="mode-btn" onclick="setCorrectionMode(0.50, 'btnMode50');">
+                BASSA (50%)
+            </button>
+            <button id="btnMode70" class="mode-btn active-mode" onclick="setCorrectionMode(0.70, 'btnMode70');">
+                MEDIA (70%)
+            </button>
+            <button id="btnMode90" class="mode-btn" onclick="setCorrectionMode(0.90, 'btnMode90');">
+                ALTA (90%)
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. STATO SISTEMA (LOG E PROGRESS BAR) -->
+    <div class="panel">
+        <div class="section-title">Stato Sistema</div>
+        <div id="uiLog" class="log">
+            Pronto. Posizionare lo smartphone a ~50cm e premere AVVIA ANC MULTI.
+        </div>
+        <div class="progress">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+    </div>
+
+    <!-- 5. DIAGNOSTICA OPERATIVA -->
+    <div class="panel">
+        <div class="toggle-row">
+            <span>Speaker Smartphone (Cutoff 120Hz)</span>
+            <label class="toggle">
+                <input type="checkbox" id="chkMobileMode" checked onchange="updateHardwareLimits()">
+                <span class="slider"></span>
+            </label>
+        </div>
+        
+        <div class="section-title">Diagnostica Operativa</div>
+        <div class="grid">
+            <div class="stat">Fondamentale (f0)<strong id="uiFreq">---</strong></div>
+            <div class="stat">SNR Spettro<strong id="uiSnr">---</strong></div>
+            <div class="stat">Fase Calibrata<strong id="uiPhase">---</strong></div>
+            <div class="stat">Gain Applicato<strong id="uiGain">---</strong></div>
+            <div class="stat">Cutoff Altoparlante<strong id="uiCutoff">120 Hz</strong></div>
+            <div class="stat">Stato Microfono<strong id="uiMicState">SPENTO</strong></div>
+        </div>
+    </div>
+
     <div class="notice">
-        Il microfono ascolta solo durante la scansione di 3 secondi per prevenire il feedback acustico.
-        La cancellazione multi-armonica applica un guadagno conservativo non saturo (max 45%).
+        Filtro Passa-Alto a 50Hz attivo in acquisizione. Campionamento spettrale ogni 1s.
+        A calibrazione ultimata l'emissione rimane attiva a microfono spento.
     </div>
 
 </div>
@@ -351,7 +351,7 @@ button:disabled{ opacity:.32; cursor:not-allowed; transform:none; }
 <script>
 
 /* ========================================================================== */
-/* CONFIGURAZIONE OTTIMIZZATA PER RUMORI REALI                                */
+/* CONFIGURAZIONE DI BASE                                                      */
 /* ========================================================================== */
 
 const CONFIG = {
@@ -360,19 +360,14 @@ const CONFIG = {
     fftSize: 4096,
     minPeakDb: -68,
     minSnrDb: 5,
-    
-    // Fattore conservativo globale (45% della potenza massima)
-    AUTO_CORRECTION_DEPTH: 0.45,
-    maxGain: 0.18, 
-    
+    maxGainBase: 0.22, 
     mobileCutoff: 120,
-    extendedCutoff: 60,
-    profileVersion: "2.2-multi"
+    extendedCutoff: 60
 };
 
 
 /* ========================================================================== */
-/* AUDIOWORKLET MULTI-ARMONICO (3 COMPONENTI SINUSOIDALI)                    */
+/* AUDIOWORKLET MULTI-ARMONICO                                                 */
 /* ========================================================================== */
 
 const WORKLET_CODE = `
@@ -417,7 +412,6 @@ class MultiHarmonicANCProcessor extends AudioWorkletProcessor {
         const TWO_PI = 2 * Math.PI;
 
         for(let i = 0; i < output.length; i++) {
-            // Telemetria I/Q per la calibrazione rapida
             if(input && input[i] !== undefined) {
                 const x = input[i];
                 const refPhase = omega0 * this.sampleCounter;
@@ -426,10 +420,7 @@ class MultiHarmonicANCProcessor extends AudioWorkletProcessor {
                 this.sampleCounter++;
             }
 
-            // Accumulatore di fase per la fondamentale
             this.phaseAccumulator = (this.phaseAccumulator + omega0) % TWO_PI;
-            
-            // Rampa morbida del guadagno per evitare click audio
             this.gain0 += (this.targetGain - this.gain0) * 0.008;
 
             if(this.enabled && this.f0 > 0) {
@@ -438,17 +429,16 @@ class MultiHarmonicANCProcessor extends AudioWorkletProcessor {
                 if (p1 < 0) p1 += TWO_PI;
                 let s1 = Math.sin(p1) * this.gain0;
 
-                // Seconda Armonica (2x f0) - Guadagno 40% di f0
+                // 2ª Armonica (2x f0)
                 let p2 = (2 * this.phaseAccumulator + this.phase0 * 1.5) % TWO_PI;
                 if (p2 < 0) p2 += TWO_PI;
                 let s2 = Math.sin(p2) * (this.gain0 * 0.40);
 
-                // Terza Armonica (3x f0) - Guadagno 20% di f0
+                // 3ª Armonica (3x f0)
                 let p3 = (3 * this.phaseAccumulator + this.phase0 * 2.0) % TWO_PI;
                 if (p3 < 0) p3 += TWO_PI;
                 let s3 = Math.sin(p3) * (this.gain0 * 0.20);
 
-                // Somma multi-armonica
                 output[i] = s1 + s2 + s3;
             } else {
                 output[i] = 0;
@@ -472,12 +462,13 @@ registerProcessor("anc-multi-processor", MultiHarmonicANCProcessor);
 
 
 /* ========================================================================== */
-/* STATO E MEMORIA                                                            */
+/* STATO GLOBALE E VARIABILI                                                  */
 /* ========================================================================== */
 
 let audioCtx = null;
 let micStream = null;
 let micSource = null;
+let micFilter = null;
 let analyser = null;
 let worklet = null;
 
@@ -485,7 +476,7 @@ let sharedFreqBuffer = null;
 
 let currentState = "IDLE";
 let operationId = 0;
-let currentSlot = 1;
+let currentModeFactor = 0.70; // Predefinito: Media (70%)
 
 let telemetry = { amp: 0, phase: 0 };
 let target = {
@@ -496,7 +487,7 @@ let target = {
 
 
 /* ========================================================================== */
-/* UTILITÀ BASE                                                               */
+/* UTILITÀ DI BASE                                                            */
 /* ========================================================================== */
 
 function ensureBuffers() {
@@ -554,24 +545,40 @@ function updateHardwareLimits() {
 
 
 /* ========================================================================== */
-/* SELEZIONE SLOT PROFILO                                                     */
+/* LOGICA INTENSITÀ CORREZIONE (50%, 70%, 90%)                               */
 /* ========================================================================== */
 
-function selectSlot(slotNum) {
-    currentSlot = slotNum;
-    for(let i = 1; i <= 4; i++) {
-        const btn = document.getElementById(`slot${i}`);
-        if(btn) {
-            if(i === slotNum) {
-                btn.classList.add("active-slot");
-            } else {
-                btn.classList.remove("active-slot");
-            }
-        }
+function calculateGain() {
+    if(!target.snr || target.snr <= 0) return 0.02;
+    let estimated = (target.snr / 35) * CONFIG.maxGainBase;
+    let gain = estimated * currentModeFactor;
+    return clamp(gain, 0.015, CONFIG.maxGainBase * currentModeFactor);
+}
+
+function setCorrectionMode(factor, btnId) {
+    currentModeFactor = factor;
+    
+    // Aggiorna grafica pulsanti modalità
+    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active-mode'));
+    const activeBtn = document.getElementById(btnId);
+    if(activeBtn) activeBtn.classList.add('active-mode');
+
+    // Se abbiamo dati dello spettro validi, ricalcola il guadagno
+    if(target.snr > 0) {
+        target.gain = calculateGain();
+        updateUI();
     }
-    document.getElementById("lblSaveSlot").innerText = `SLOT ${slotNum}`;
-    document.getElementById("lblLoadSlot").innerText = `SLOT ${slotNum}`;
-    log(`Selezionato Slot ${slotNum}.`);
+
+    // Se l'ANC è già in esecuzione, aggiorna l'AudioWorklet in tempo reale (microfono spento)
+    if(currentState === "ACTIVE" && worklet) {
+        worklet.port.postMessage({
+            type: "PARAMS",
+            payload: { f0: target.freq, phase0: target.phase, gain0: target.gain, enabled: true }
+        });
+        log(`⚡ Correzione impostata al ${(currentModeFactor * 100).toFixed(0)}%. Emissione aggiornata.`);
+    } else {
+        log(`Modalità correzione: ${(currentModeFactor * 100).toFixed(0)}%. Sarà applicata all'avvio.`);
+    }
 }
 
 
@@ -589,7 +596,7 @@ function updateUI() {
 
 
 /* ========================================================================== */
-/* GESTIONE AUDIO & CHIUSURA MICROFONO STRICT                                 */
+/* AUDIO & GESTIONE MICROFONO CON FILTRO PASSA-ALTO 50HZ                      */
 /* ========================================================================== */
 
 async function initAudioContextOnly() {
@@ -634,18 +641,32 @@ async function startMicrophone() {
         });
 
         micSource = audioCtx.createMediaStreamSource(micStream);
+        
+        // FILTRO PASSA-ALTO A 50 HZ (Elimina rumori d'aria e vibrazioni a frequenze ultra-basse)
+        micFilter = audioCtx.createBiquadFilter();
+        micFilter.type = "highpass";
+        micFilter.frequency.value = 50;
+
         analyser = audioCtx.createAnalyser();
         analyser.fftSize = CONFIG.fftSize;
         analyser.smoothingTimeConstant = 0.05;
 
         ensureBuffers();
-        micSource.connect(analyser);
-        micSource.connect(worklet);
+
+        // Connessione catena: Mic -> Filtro 50Hz -> Analizzatore e Worklet
+        micSource.connect(micFilter);
+        micFilter.connect(analyser);
+        micFilter.connect(worklet);
+
         updateMicUI(true);
     }
 }
 
 function stopMicrophone() {
+    if(micFilter) {
+        try { micFilter.disconnect(); } catch(e){}
+        micFilter = null;
+    }
     if(micSource) {
         try { micSource.disconnect(); } catch(e){}
         micSource = null;
@@ -663,7 +684,7 @@ function stopMicrophone() {
 
 
 /* ========================================================================== */
-/* RILEVAMENTO PICCO E INTERPOLAZIONE PARABOLICA                              */
+/* RILEVAMENTO SPETTRALE CON CAMPIONAMENTO A 1 SECONDO                       */
 /* ========================================================================== */
 
 function detectPeak() {
@@ -687,7 +708,6 @@ function detectPeak() {
 
     if(peakBin < 0 || peakDb < CONFIG.minPeakDb) return null;
 
-    // Interpolazione parabolica sub-bin
     let delta = 0;
     const denom = sharedFreqBuffer[peakBin-1] - 2 * sharedFreqBuffer[peakBin] + sharedFreqBuffer[peakBin+1];
     if(Math.abs(denom) > 0.0001) {
@@ -709,12 +729,15 @@ function detectPeak() {
     return { freq, ampDb: peakDb, snr };
 }
 
+// CAMPIONAMENTO CON INTERVALLO DI 1 SECONDO TRA OGNI MISURA
 async function fastAnalyseTarget() {
     const samples = [];
     for(let i = 0; i < 3; i++) {
-        await sleep(140);
+        await sleep(1000); // 1 secondo esatto tra i campioni
         const peak = detectPeak();
-        if(peak && peak.snr >= CONFIG.minSnrDb) samples.push(peak);
+        if(peak && peak.snr >= CONFIG.minSnrDb) {
+            samples.push(peak);
+        }
     }
     if(samples.length < 2) return null;
 
@@ -725,7 +748,7 @@ async function fastAnalyseTarget() {
 
 
 /* ========================================================================== */
-/* CALIBRAZIONE RAPIDA DI FASE E GUADAGNO CONSERVATIVO                        */
+/* CALIBRAZIONE DI FASE RAPIDA                                                */
 /* ========================================================================== */
 
 async function fastCalibratePhase(f0) {
@@ -734,7 +757,7 @@ async function fastCalibratePhase(f0) {
         payload: { f0, phase0: 0, gain0: 0.03, enabled: true }
     });
 
-    await sleep(250);
+    await sleep(300);
 
     worklet.port.postMessage({ type: "MUTE" });
 
@@ -746,16 +769,9 @@ async function fastCalibratePhase(f0) {
     return correction;
 }
 
-function calculateConservativeGain(snrDb) {
-    // Applica una riduzione scalata con fattore conservativo (45% dell'ottimo)
-    let estimated = (snrDb / 35) * CONFIG.maxGain;
-    let conservative = estimated * CONFIG.AUTO_CORRECTION_DEPTH;
-    return clamp(conservative, 0.02, CONFIG.maxGain);
-}
-
 
 /* ========================================================================== */
-/* PIPELINE PRINCIPALE ANC (< 3 SECONDI TOTALE)                               */
+/* PIPELINE PRINCIPALE ANC                                                    */
 /* ========================================================================== */
 
 async function startANC() {
@@ -763,31 +779,16 @@ async function startANC() {
     const id = ++operationId;
 
     try {
-        if(target.freq > 0 && target.gain > 0 && currentState === "PROFILE_LOADED") {
-            await initAudioContextOnly();
-            worklet.port.postMessage({
-                type: "PARAMS",
-                payload: { f0: target.freq, phase0: target.phase, gain0: target.gain, enabled: true }
-            });
-            currentState = "ACTIVE";
-            setStatus("ANC MULTI ATTIVO (PROFILO)", "active");
-            log(`🟢 Sintesi Multi-Armonica attiva (${target.freq.toFixed(1)} Hz). Microfono spento.`);
-            document.getElementById("btnStart").disabled = true;
-            document.getElementById("btnStop").disabled = false;
-            document.getElementById("btnUpdate").disabled = false;
-            return;
-        }
-
         await startMicrophone();
         currentState = "ANALYSIS";
-        setStatus("SCANSIONE (&lt;3s)", "calibrating");
+        setStatus("SCANSIONE IN CORSO...", "calibrating");
 
         document.getElementById("btnStart").disabled = true;
         document.getElementById("btnStop").disabled = false;
         document.getElementById("btnUpdate").disabled = true;
 
-        setProgress(20);
-        log("Rilevamento rumore ambientale e armoniche...");
+        setProgress(15);
+        log("Campionamento spettro a intervalli di 1s (Filtro 50Hz attivo)...");
 
         const found = await fastAnalyseTarget();
         if(id !== operationId) return;
@@ -795,23 +796,23 @@ async function startANC() {
 
         target.freq = found.freq;
         target.snr = found.snr;
-        setProgress(50);
+        setProgress(60);
 
         updateHardwareLimits();
         if(target.freq < target.cutoff) {
-            log(`⚠️ Fondamentale ${target.freq.toFixed(1)}Hz sotto il cutoff speaker (${target.cutoff}Hz). Soppressione armoniche superiori.`);
+            log(`⚠️ Frequenza ${target.freq.toFixed(1)}Hz sotto cutoff (${target.cutoff}Hz). Cancellazione concentrata sulle armoniche.`);
         }
 
-        setProgress(75);
+        setProgress(80);
         await fastCalibratePhase(target.freq);
 
-        target.gain = calculateConservativeGain(target.snr);
-        setProgress(90);
+        target.gain = calculateGain();
+        setProgress(95);
 
-        // Spegnimento definitivo del microfono
+        // SPEGNIMENTO FISICO DEL MICROFONO DALL'HARDWARE
         stopMicrophone();
 
-        // Emissione sintetizzata multi-armonica
+        // AVVIO EMISSIONE MULTI-ARMONICA SINTETICA
         worklet.port.postMessage({
             type: "PARAMS",
             payload: { f0: target.freq, phase0: target.phase, gain0: target.gain, enabled: true }
@@ -819,7 +820,7 @@ async function startANC() {
 
         currentState = "ACTIVE";
         setStatus("ANC MULTI ATTIVO (MIC SPENTO)", "active");
-        log(`🟢 Cancellazione Multi-Armonica attiva per ${target.freq.toFixed(1)} Hz (Gain: ${(target.gain*100).toFixed(1)}%). Microfono spento.`);
+        log(`🟢 Cancellazione attiva su ${target.freq.toFixed(1)} Hz (Correzione: ${(currentModeFactor*100).toFixed(0)}%). Microfono spento.`);
 
         setProgress(100);
         updateUI();
@@ -833,7 +834,7 @@ async function startANC() {
 
 
 /* ========================================================================== */
-/* MONITOR RAPIDO                                                             */
+/* MONITOR RAPIDO E RICALIBRAZIONE                                            */
 /* ========================================================================== */
 
 async function startMonitor() {
@@ -842,9 +843,9 @@ async function startMonitor() {
         await startMicrophone();
         currentState = "MONITOR";
         setStatus("CAMPIOAMENTO...", "monitor");
-        log("Analisi rapida dello spettro acustico...");
+        log("Acquisizione spettro (1s con filtro 50Hz)...");
 
-        await sleep(600);
+        await sleep(1000);
         const peak = detectPeak();
         
         stopMicrophone();
@@ -853,7 +854,7 @@ async function startMonitor() {
             target.freq = peak.freq;
             target.snr = peak.snr;
             updateUI();
-            log(`Spettro: Fondamentale a ${peak.freq.toFixed(1)} Hz (SNR: ${peak.snr.toFixed(1)} dB).`);
+            log(`Frequenza rilevata: ${peak.freq.toFixed(1)} Hz (SNR: ${peak.snr.toFixed(1)} dB).`);
         } else {
             log("Nessun segnale rilevante nello spettro.");
         }
@@ -868,52 +869,6 @@ async function startMonitor() {
 async function updateANC() {
     currentState = "IDLE";
     await startANC();
-}
-
-
-/* ========================================================================== */
-/* PROFILI MULTI-SLOT                                                         */
-/* ========================================================================== */
-
-function saveProfile() {
-    if(!target.freq || target.freq <= 0) {
-        log("Nessuna calibrazione da salvare.");
-        return;
-    }
-    const profile = {
-        version: CONFIG.profileVersion,
-        timestamp: Date.now(),
-        target: {
-            freq: target.freq,
-            snr: target.snr,
-            phase: target.phase,
-            gain: target.gain,
-            cutoff: target.cutoff
-        }
-    };
-    localStorage.setItem(`anc_v22_slot_${currentSlot}`, JSON.stringify(profile));
-    log(`💾 Calibrazione salvata nello Slot ${currentSlot} (${target.freq.toFixed(1)} Hz).`);
-}
-
-async function loadProfile() {
-    const raw = localStorage.getItem(`anc_v22_slot_${currentSlot}`);
-    if(!raw) {
-        log(`📂 Slot ${currentSlot} vuoto.`);
-        return;
-    }
-
-    try {
-        const data = JSON.parse(raw);
-        target = { ...target, ...data.target };
-        updateUI();
-
-        currentState = "PROFILE_LOADED";
-        setStatus("PROFILO PRONTO", "monitor");
-        log(`📂 Slot ${currentSlot} caricato (${target.freq.toFixed(1)} Hz). Premere AVVIA ANC MULTI.`);
-        document.getElementById("btnStart").disabled = false;
-    } catch(error) {
-        log("Errore durante il caricamento del profilo.");
-    }
 }
 
 
@@ -966,4 +921,4 @@ window.addEventListener("load", () => {
 </script>
 
 </body>
-            </html>
+    </html>
